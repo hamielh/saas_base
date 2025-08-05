@@ -18,7 +18,9 @@ class User(UserMixin, db.Model):
     
     first_name = db.Column(db.String(50), nullable=False)
     last_name = db.Column(db.String(50), nullable=False)
-    # is_active removido - não existe na tabela atual
+    
+    # Campo para preferência de tema - NOVO
+    theme_preference = db.Column(db.String(10), default='light')
     
     role = db.Column(db.Enum(UserRole), nullable=False, default=UserRole.USER)
     account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=True)
@@ -34,6 +36,7 @@ class User(UserMixin, db.Model):
         self.last_name = last_name.strip()
         self.role = role
         self.account_id = account_id
+        self.theme_preference = 'light'  # Padrão
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password).decode('utf-8')
@@ -45,7 +48,7 @@ class User(UserMixin, db.Model):
         return True
     
     def is_active(self):
-        return True  # Por enquanto sempre ativo
+        return True
     
     def is_anonymous(self):
         return False
@@ -78,6 +81,7 @@ class User(UserMixin, db.Model):
             'full_name': self.get_full_name(),
             'role': self.role.value,
             'account_id': self.account_id,
+            'theme_preference': self.theme_preference,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'last_login': self.last_login.isoformat() if self.last_login else None
         }

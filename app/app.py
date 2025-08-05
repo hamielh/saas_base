@@ -5,7 +5,11 @@ from flask_migrate import Migrate
 import os
 import sys
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Adicionar o diretório atual e o pai ao path
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.insert(0, current_dir)
+sys.path.insert(0, parent_dir)
 
 from models import db, User
 login_manager = LoginManager()
@@ -39,13 +43,13 @@ def create_app():
     from frontend.routes.main import main_bp
     from frontend.routes.super_admin import super_admin_bp
     from api.user import api_user_bp
+    from api.settings import api_settings_bp  # NOVO
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp) 
     app.register_blueprint(super_admin_bp)
     app.register_blueprint(api_user_bp)
-    
-    pass
+    app.register_blueprint(api_settings_bp)  # NOVO
     
     @app.context_processor
     def inject_globals():

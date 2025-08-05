@@ -1,5 +1,9 @@
 import os
 from datetime import timedelta
+from dotenv import load_dotenv
+
+# Carregar variáveis do arquivo .env
+load_dotenv()
 
 class Config:
     """Configuração base do sistema"""
@@ -11,6 +15,7 @@ class Config:
     # Configurações do Banco de Dados
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///ceotur.db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ECHO = os.environ.get('SQLALCHEMY_ECHO', 'False').lower() == 'true'
     SQLALCHEMY_ENGINE_OPTIONS = {
         'pool_recycle': 3600,  # Reconectar a cada 1 hora
         'pool_pre_ping': True   # Verificar conexão antes de usar
@@ -18,7 +23,7 @@ class Config:
     
     # Configurações de Session/Cookie
     PERMANENT_SESSION_LIFETIME = timedelta(hours=24)
-    SESSION_COOKIE_SECURE = os.environ.get('HTTPS', 'False').lower() == 'true'
+    SESSION_COOKIE_SECURE = os.environ.get('SESSION_COOKIE_SECURE', 'False').lower() == 'true'
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
     
@@ -37,15 +42,15 @@ class Config:
     
     # Configurações do Sistema SaaS
     SUPER_ADMIN_EMAIL = os.environ.get('SUPER_ADMIN_EMAIL', 'admin@ceotur.com')
-    DEFAULT_TIMEZONE = 'America/Sao_Paulo'
+    DEFAULT_TIMEZONE = os.environ.get('DEFAULT_TIMEZONE', 'America/Sao_Paulo')
     
     # Configurações de Segurança
-    WTF_CSRF_ENABLED = True
+    WTF_CSRF_ENABLED = os.environ.get('WTF_CSRF_ENABLED', 'True').lower() == 'true'
     WTF_CSRF_TIME_LIMIT = 3600  # 1 hora
     
     # Rate Limiting (para futuro)
-    RATELIMIT_STORAGE_URL = 'memory://'
-    RATELIMIT_DEFAULT = "100 per hour"
+    RATELIMIT_STORAGE_URL = os.environ.get('RATELIMIT_STORAGE_URL', 'memory://')
+    RATELIMIT_DEFAULT = os.environ.get('RATELIMIT_DEFAULT', '100 per hour')
 
 class DevelopmentConfig(Config):
     """Configuração para desenvolvimento"""

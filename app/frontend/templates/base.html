@@ -1,29 +1,209 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="max-h-screen m-0">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Painel de Super Admin{% endblock %}</title>
-    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+    <title>{% block title %}Sistema{% endblock %}</title>
+    <link href="{{ url_for('static', filename='css/output.css') }}" rel="stylesheet">
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}" type="image/x-icon">
+    <link rel='stylesheet' href='https://unpkg.com/boxicons@latest/css/boxicons.min.css'>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="bg-gray-50 min-h-screen">
-    <!-- Navbar -->
-    <nav class="bg-white shadow-sm border-b">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex items-center">
-                    <h1 class="text-xl font-bold text-gray-900">Gerenciamento</h1>
+
+<style>
+    body {
+        font-family: 'Poppins', sans-serif;
+    }
+</style>
+
+<body class="max-h-screen bg-white dark:bg-zinc-900">
+    <div class="flex flex-row h-screen">
+        <!-- Sidebar -->
+        <div id="sidebar"
+            class="flex flex-col max-h-screen fixed inset-y-0 left-0 bg-white dark:bg-zinc-900 w-64 p-4 transform -translate-x-full transition-transform duration-300 ease-in-out md:relative md:translate-x-0 z-50 border-r border-gray-200 dark:border-zinc-700">
+            
+            <!-- Logo -->
+            <div class="flex justify-center mb-8">
+                <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="Logo" class="h-12">
+            </div>
+
+            <!-- Navigation -->
+            <div class="flex flex-col justify-between h-full text-black dark:text-white">
+                <!-- Menu Principal -->
+                <div class="flex flex-col space-y-2">
+                    <a href="{{ url_for('dashboard') }}"
+                        class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors
+                        {% if request.endpoint == 'dashboard' %}bg-gray-100 dark:bg-zinc-800 border-r-4 border-blue-500{% endif %}">
+                        <i class='bx bx-home-alt text-xl'></i>
+                        <span class="font-medium">Dashboard</span>
+                    </a>
                 </div>
-                <div class="flex items-center space-x-4">
-                    {% block nav_items %}{% endblock %}
+
+                <!-- Botões de Ação Embaixo -->
+                <div class="mt-auto pt-4 border-t border-gray-200 dark:border-zinc-700">
+                    <div class="flex flex-col space-y-2">
+                        <!-- Configurações -->
+                        <button class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors text-left w-full">
+                            <i class='bx bx-cog text-xl'></i>
+                            <span class="font-medium">Configurações</span>
+                        </button>
+
+                        <!-- Dark Mode Toggle -->
+                        <button id="dark-mode" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors text-left w-full">
+                            <i id="icon-dark" class='bx bx-sun text-xl'></i>
+                            <span class="font-medium">Tema</span>
+                        </button>
+
+                        <!-- Logout -->
+                        <form action="{{ url_for('auth.logout') }}" method="POST" class="w-full">
+                            <button type="submit" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors text-left w-full text-red-600 dark:text-red-400">
+                                <i class='bx bx-log-out text-xl'></i>
+                                <span class="font-medium">Sair</span>
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
-    </nav>
 
-    <!-- Content -->
-    <main class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        {% block content %}{% endblock %}
-    </main>
+        <!-- Overlay para mobile -->
+        <div id="overlay" class="fixed inset-0 bg-black opacity-50 hidden z-40 md:hidden"></div>
+
+        <!-- Main Content -->
+        <div class="bg-white dark:bg-zinc-900 flex-1 md:p-4 md:pl-0 max-h-screen flex flex-col">
+            <!-- Mobile Header -->
+            <div class="bg-white dark:bg-zinc-900 h-12 p-4 flex items-center md:hidden border-b border-gray-200 dark:border-zinc-700">
+                <button id="openSidebar" class="text-black dark:text-white">
+                    <i class="bx bx-menu bx-sm"></i>
+                </button>
+                <h1 class="ml-4 text-lg font-semibold">{% block page_title %}Sistema{% endblock %}</h1>
+            </div>
+
+            <!-- Content Area -->
+            <div class="bg-gray-50 dark:bg-zinc-800 text-black dark:text-white flex flex-col h-full p-6 rounded-lg">
+                {% block content %}
+                <div class="text-center py-12">
+                    <h2 class="text-2xl font-bold mb-4">Bem-vindo!</h2>
+                    <p class="text-gray-600 dark:text-gray-400">Selecione uma opção no menu lateral para começar.</p>
+                </div>
+                {% endblock %}
+            </div>
+        </div>
+    </div>
 </body>
+
+<script>
+    // Dark Mode Toggle - Abordagem Híbrida
+    const toggleThemeLink = document.getElementById('dark-mode');
+    const themeIcon = document.getElementById('icon-dark');
+
+    const applyTheme = (theme) => {
+        if (theme === 'dark') {
+            document.documentElement.classList.add('dark');
+            themeIcon.classList.replace('bx-sun', 'bx-moon');
+        } else {
+            document.documentElement.classList.remove('dark');
+            themeIcon.classList.replace('bx-moon', 'bx-sun');
+        }
+    };
+
+    const saveThemePreference = async (theme) => {
+        // 1. Aplicar imediatamente para UX responsiva
+        localStorage.setItem('theme', theme);
+        applyTheme(theme);
+        
+        // 2. Sincronizar com backend (opcional - para sync entre dispositivos)
+        try {
+            await fetch('/api/user/theme', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name=csrf-token]')?.content || ''
+                },
+                body: JSON.stringify({ theme: theme })
+            });
+        } catch (error) {
+            console.log('Tema salvo localmente, sync com servidor falhou:', error);
+        }
+    };
+
+    const toggleTheme = () => {
+        const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        saveThemePreference(newTheme);
+    };
+
+    toggleThemeLink.addEventListener('click', (event) => {
+        event.preventDefault();
+        toggleTheme();
+    });
+
+    // Aplicar tema ao carregar - Prioriza backend se disponível
+    document.addEventListener('DOMContentLoaded', () => {
+        // 1. Primeiro, aplica tema local para evitar flash
+        const localTheme = localStorage.getItem('theme');
+        const systemPreference = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        const fallbackTheme = localTheme || systemPreference;
+        
+        applyTheme(fallbackTheme);
+        
+        // 2. Buscar preferência do servidor (se usuário logado)
+        fetch('/api/user/theme')
+            .then(response => response.json())
+            .then(data => {
+                if (data.theme && data.theme !== fallbackTheme) {
+                    // Servidor tem preferência diferente, aplicar
+                    applyTheme(data.theme);
+                    localStorage.setItem('theme', data.theme);
+                }
+            })
+            .catch(() => {
+                // Falhou, usar tema local/sistema
+                console.log('Usando preferência local/sistema de tema');
+            });
+    });
+
+    // Detectar mudanças na preferência do sistema
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        if (!localStorage.getItem('theme')) {
+            // Só seguir sistema se usuário não definiu preferência
+            applyTheme(e.matches ? 'dark' : 'light');
+        }
+    });
+
+    // Mobile Sidebar
+    const sidebar = document.getElementById('sidebar');
+    const openSidebarBtn = document.getElementById('openSidebar');
+    const overlay = document.getElementById('overlay');
+
+    if (openSidebarBtn) {
+        openSidebarBtn.addEventListener('click', () => {
+            sidebar.classList.remove('-translate-x-full');
+            sidebar.classList.add('translate-x-0');
+            overlay.classList.remove('hidden');
+        });
+    }
+
+    const closeSidebar = () => {
+        sidebar.classList.add('-translate-x-full');
+        sidebar.classList.remove('translate-x-0');
+        overlay.classList.add('hidden');
+    };
+
+    if (overlay) {
+        overlay.addEventListener('click', closeSidebar);
+    }
+
+    // Fechar sidebar no mobile ao clicar em um link
+    const sidebarLinks = sidebar.querySelectorAll('a, button[type="submit"]');
+    sidebarLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            if (window.innerWidth < 768) { // Se for mobile
+                closeSidebar();
+            }
+        });
+    });
+</script>
+
 </html>
