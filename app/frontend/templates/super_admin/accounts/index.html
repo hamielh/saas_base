@@ -1,0 +1,228 @@
+{% extends "super_admin/base.html" %}
+
+{% block page_title %}Accounts{% endblock %}
+
+{% block breadcrumb %}
+<p class="text-sm text-gray-600">Gerenciamento de accounts do sistema</p>
+{% endblock %}
+
+{% block header_actions %}
+<a href="{{ url_for('super_admin.accounts.create') }}" 
+   class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors">
+    <i class='bx bx-plus mr-2'></i>
+    Novo Account
+</a>
+{% endblock %}
+
+{% block content %}
+<!-- Filtros -->
+<div class="bg-white rounded-lg shadow-md p-6 mb-6">
+    <form method="GET" class="flex flex-wrap gap-4 items-end">
+        <!-- Busca -->
+        <div class="flex-1 min-w-64">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Buscar</label>
+            <input type="text" 
+                   name="search" 
+                   value="{{ search }}"
+                   placeholder="Nome, subdomínio..."
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+        </div>
+
+        <!-- Filtro de Status -->
+        <div class="min-w-48">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+            <select name="status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                <option value="">Todos</option>
+                <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Ativo</option>
+                <option value="suspended" {% if status_filter == 'suspended' %}selected{% endif %}>Suspenso</option>
+                <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inativo</option>
+            </select>
+        </div>
+
+        <!-- Botões -->
+        <div class="flex gap-2">
+            <button type="submit" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors">
+                <i class='bx bx-search mr-1'></i>
+                Filtrar
+            </button>
+            <a href="{{ url_for('super_admin.accounts.index') }}" 
+               class="bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded-lg transition-colors">
+                Limpar
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Tabela de Accounts -->
+<div class="bg-white rounded-lg shadow-md overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-200">
+        <h3 class="text-lg font-semibold text-gray-900">
+            Lista de Accounts 
+            <span class="text-sm font-normal text-gray-500">({{ accounts.total }} encontrados)</span>
+        </h3>
+    </div>
+
+    {% if accounts.items %}
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuários</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Criado</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for account in accounts.items %}
+                    <tr class="hover:bg-gray-50">
+                        <!-- Account -->
+                        <td class="px-6 py-4">
+                            <div class="flex items-center">
+                                <div class="h-10 w-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                                    <i class='bx bx-buildings text-green-600'></i>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-gray-900">{{ account.name }}</p>
+                                    {% if account.subdomain %}
+                                        <p class="text-sm text-gray-500">{{ account.subdomain }}.ceotur.com</p>
+                                    {% else %}
+                                        <p class="text-sm text-gray-400">Sem subdomínio</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+
+                        <!-- Owner -->
+                        <td class="px-6 py-4">
+                            {% if account.owner %}
+                                <div>
+                                    <p class="font-medium text-gray-900">{{ account.owner.get_full_name() }}</p>
+                                    <p class="text-sm text-gray-500">{{ account.owner.email }}</p>
+                                </div>
+                            {% else %}
+                                <span class="text-gray-400">—</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Status -->
+                        <td class="px-6 py-4">
+                            {% if account.status.value == 'active' %}
+                                <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                                    <i class='bx bx-check-circle mr-1'></i>Ativo
+                                </span>
+                            {% elif account.status.value == 'suspended' %}
+                                <span class="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">
+                                    <i class='bx bx-pause-circle mr-1'></i>Suspenso
+                                </span>
+                            {% else %}
+                                <span class="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full">
+                                    <i class='bx bx-x-circle mr-1'></i>Inativo
+                                </span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Usuários -->
+                        <td class="px-6 py-4 text-sm text-gray-500">
+                            <span class="font-medium text-gray-900">{{ account.get_user_count() }}</span>
+                            {% if account.get_user_count() == 1 %}usuário{% else %}usuários{% endif %}
+                        </td>
+
+                        <!-- Criado -->
+                        <td class="px-6 py-4 text-sm text-gray-500">
+                            {% if account.created_at %}
+                                {{ account.created_at.strftime('%d/%m/%Y') }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+
+                        <!-- Ações -->
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex items-center justify-end space-x-2">
+                                <a href="{{ url_for('super_admin.accounts.view', account_id=account.id) }}" 
+                                   class="text-blue-600 hover:text-blue-900" title="Ver">
+                                    <i class='bx bx-show text-lg'></i>
+                                </a>
+                                <a href="{{ url_for('super_admin.accounts.edit', account_id=account.id) }}" 
+                                   class="text-yellow-600 hover:text-yellow-900" title="Editar">
+                                    <i class='bx bx-edit text-lg'></i>
+                                </a>
+                                <form method="POST" action="{{ url_for('super_admin.accounts.delete', account_id=account.id) }}" 
+                                      class="inline" onsubmit="return confirm('Tem certeza que deseja deletar este account? Todos os usuários associados serão desvinculados.')">
+                                    <button type="submit" class="text-red-600 hover:text-red-900" title="Deletar">
+                                        <i class='bx bx-trash text-lg'></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginação -->
+        {% if accounts.pages > 1 %}
+        <div class="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+            <div class="text-sm text-gray-500">
+                Mostrando {{ accounts.per_page * (accounts.page - 1) + 1 }} a 
+                {{ accounts.per_page * (accounts.page - 1) + accounts.items|length }} de {{ accounts.total }} accounts
+            </div>
+            
+            <div class="flex space-x-2">
+                {% if accounts.has_prev %}
+                    <a href="{{ url_for('super_admin.accounts.index', page=accounts.prev_num, search=search, status=status_filter) }}" 
+                       class="px-3 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200">
+                        Anterior
+                    </a>
+                {% endif %}
+                
+                {% for page in accounts.iter_pages() %}
+                    {% if page %}
+                        {% if page != accounts.page %}
+                            <a href="{{ url_for('super_admin.accounts.index', page=page, search=search, status=status_filter) }}" 
+                               class="px-3 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200">
+                                {{ page }}
+                            </a>
+                        {% else %}
+                            <span class="px-3 py-2 bg-green-600 text-white rounded">{{ page }}</span>
+                        {% endif %}
+                    {% else %}
+                        <span class="px-3 py-2 text-gray-400">…</span>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if accounts.has_next %}
+                    <a href="{{ url_for('super_admin.accounts.index', page=accounts.next_num, search=search, status=status_filter) }}" 
+                       class="px-3 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200">
+                        Próximo
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+    {% else %}
+        <!-- Empty State -->
+        <div class="px-6 py-12 text-center">
+            <i class='bx bx-buildings text-6xl text-gray-300 mb-4'></i>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Nenhum account encontrado</h3>
+            <p class="text-gray-500 mb-4">
+                {% if search or status_filter %}
+                    Tente ajustar os filtros para encontrar accounts.
+                {% else %}
+                    Comece criando o primeiro account do sistema.
+                {% endif %}
+            </p>
+            <a href="{{ url_for('super_admin.accounts.create') }}" 
+               class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg inline-flex items-center">
+                <i class='bx bx-plus mr-2'></i>
+                Criar Primeiro Account
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

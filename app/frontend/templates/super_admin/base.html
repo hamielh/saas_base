@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Super Admin{% endblock %}</title>
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+</head>
+<body class="bg-gray-100">
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <div class="w-64 bg-gray-900 text-white flex flex-col">
+            <!-- Logo -->
+            <div class="p-6 border-b border-gray-700">
+                <div class="flex items-center">
+                    <i class='bx bxs-shield-check text-3xl text-blue-400 mr-3'></i>
+                    <div>
+                        <h1 class="text-xl font-bold">Super Admin</h1>
+                        <p class="text-sm text-gray-400">Gerenciamento</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation -->
+            <nav class="flex-1 py-6">
+                <ul class="space-y-2 px-4">
+                    <!-- Dashboard -->
+                    <li>
+                        <a href="{{ url_for('super_admin.dashboard') }}" 
+                           class="flex items-center py-3 px-4 rounded-lg hover:bg-gray-800 transition-colors
+                           {% if request.endpoint == 'super_admin.dashboard' %}bg-gray-800 border-r-4 border-blue-400{% endif %}">
+                            <i class='bx bx-home text-xl mr-3'></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+
+                    <!-- Usuários -->
+                    <li>
+                        <a href="{{ url_for('super_admin.users.index') }}" 
+                           class="flex items-center py-3 px-4 rounded-lg hover:bg-gray-800 transition-colors
+                           {% if 'users' in request.endpoint %}bg-gray-800 border-r-4 border-blue-400{% endif %}">
+                            <i class='bx bx-user text-xl mr-3'></i>
+                            <span>Usuários</span>
+                        </a>
+                    </li>
+
+                    <!-- Accounts -->
+                    <li>
+                        <a href="{{ url_for('super_admin.accounts.index') }}" 
+                           class="flex items-center py-3 px-4 rounded-lg hover:bg-gray-800 transition-colors
+                           {% if 'accounts' in request.endpoint %}bg-gray-800 border-r-4 border-blue-400{% endif %}">
+                            <i class='bx bx-buildings text-xl mr-3'></i>
+                            <span>Accounts</span>
+                        </a>
+                    </li>
+
+                    <!-- Separador -->
+                    <li class="border-t border-gray-700 pt-4 mt-4">
+                        <span class="text-xs text-gray-400 px-4">SISTEMA</span>
+                    </li>
+
+                    <!-- Configurações -->
+                    <li>
+                        <a href="#" class="flex items-center py-3 px-4 rounded-lg hover:bg-gray-800 transition-colors">
+                            <i class='bx bx-cog text-xl mr-3'></i>
+                            <span>Configurações</span>
+                        </a>
+                    </li>
+
+                    <!-- Voltar ao Dashboard -->
+                    <li>
+                        <a href="{{ url_for('main.dashboard') }}" 
+                           class="flex items-center py-3 px-4 rounded-lg hover:bg-gray-800 transition-colors text-gray-400">
+                            <i class='bx bx-arrow-back text-xl mr-3'></i>
+                            <span>Dashboard Normal</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+
+            <!-- User Info -->
+            <div class="p-4 border-t border-gray-700">
+                <div class="flex items-center">
+                    <div class="h-10 w-10 bg-blue-600 rounded-full flex items-center justify-center mr-3">
+                        <i class='bx bx-user text-white'></i>
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-sm font-medium">{{ current_user.get_full_name() }}</p>
+                        <p class="text-xs text-gray-400">{{ current_user.role.value.title() }}</p>
+                    </div>
+                    <a href="{{ url_for('auth.logout') }}" class="text-gray-400 hover:text-white">
+                        <i class='bx bx-log-out text-xl'></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Header -->
+            <header class="bg-white shadow-sm border-b">
+                <div class="flex items-center justify-between px-6 py-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">
+                            {% block page_title %}Super Admin{% endblock %}
+                        </h2>
+                        {% block breadcrumb %}{% endblock %}
+                    </div>
+                    
+                    <div class="flex items-center space-x-4">
+                        {% block header_actions %}{% endblock %}
+                    </div>
+                </div>
+            </header>
+
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="px-6 py-4">
+                        {% for category, message in messages %}
+                            <div class="mb-2 p-3 rounded-lg
+                                {% if category == 'error' %}bg-red-100 border border-red-300 text-red-700
+                                {% elif category == 'success' %}bg-green-100 border border-green-300 text-green-700
+                                {% else %}bg-blue-100 border border-blue-300 text-blue-700{% endif %}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <!-- Main Content Area -->
+            <main class="flex-1 overflow-auto p-6">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+</body>
+</html>

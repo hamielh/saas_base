@@ -1,0 +1,155 @@
+{% extends "./super_admin/base.html" %}
+
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- Estatísticas Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <!-- Total Usuários -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="flex items-center">
+            <div class="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
+                <i class='bx bx-user text-blue-600 text-2xl'></i>
+            </div>
+            <div>
+                <p class="text-sm text-gray-600">Total Usuários</p>
+                <p class="text-2xl font-bold text-gray-900">{{ stats.total_users }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Accounts -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="flex items-center">
+            <div class="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center mr-4">
+                <i class='bx bx-buildings text-green-600 text-2xl'></i>
+            </div>
+            <div>
+                <p class="text-sm text-gray-600">Total Accounts</p>
+                <p class="text-2xl font-bold text-gray-900">{{ stats.total_accounts }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Super Admins -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="flex items-center">
+            <div class="h-12 w-12 bg-purple-100 rounded-lg flex items-center justify-center mr-4">
+                <i class='bx bx-shield-check text-purple-600 text-2xl'></i>
+            </div>
+            <div>
+                <p class="text-sm text-gray-600">Super Admins</p>
+                <p class="text-2xl font-bold text-gray-900">{{ stats.super_admins }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Administradores -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="flex items-center">
+            <div class="h-12 w-12 bg-orange-100 rounded-lg flex items-center justify-center mr-4">
+                <i class='bx bx-crown text-orange-600 text-2xl'></i>
+            </div>
+            <div>
+                <p class="text-sm text-gray-600">Administradores</p>
+                <p class="text-2xl font-bold text-gray-900">{{ stats.admins }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Ações Rápidas -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <!-- Ações de Usuários -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <i class='bx bx-user-plus text-blue-600 mr-2'></i>
+            Gerenciar Usuários
+        </h3>
+        <div class="space-y-3">
+            <a href="{{ url_for('super_admin.users.create') }}" 
+               class="block w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors text-center">
+                <i class='bx bx-plus mr-2'></i>
+                Criar Novo Usuário
+            </a>
+            <a href="{{ url_for('super_admin.users.index') }}" 
+               class="block w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-lg transition-colors text-center">
+                <i class='bx bx-list-ul mr-2'></i>
+                Ver Todos os Usuários
+            </a>
+        </div>
+    </div>
+
+    <!-- Ações de Accounts -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <i class='bx bx-building-house text-green-600 mr-2'></i>
+            Gerenciar Accounts
+        </h3>
+        <div class="space-y-3">
+            <a href="{{ url_for('super_admin.accounts.create') }}" 
+               class="block w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg transition-colors text-center">
+                <i class='bx bx-plus mr-2'></i>
+                Criar Novo Account
+            </a>
+            <a href="{{ url_for('super_admin.accounts.index') }}" 
+               class="block w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-lg transition-colors text-center">
+                <i class='bx bx-list-ul mr-2'></i>
+                Ver Todos os Accounts
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Gráfico de Distribuição de Usuários -->
+<div class="bg-white rounded-lg shadow-md p-6">
+    <h3 class="text-lg font-semibold text-gray-900 mb-6">Distribuição de Usuários por Tipo</h3>
+    
+    <div class="space-y-4">
+        <!-- Super Admins -->
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <div class="h-4 w-4 bg-purple-500 rounded mr-3"></div>
+                <span class="text-gray-700">Super Admins</span>
+            </div>
+            <div class="flex items-center">
+                <span class="text-gray-900 font-medium mr-2">{{ stats.super_admins }}</span>
+                <div class="w-24 bg-gray-200 rounded-full h-2">
+                    <div class="bg-purple-500 h-2 rounded-full" 
+                         style="width: {% if stats.total_users > 0 %}{{ (stats.super_admins / stats.total_users * 100)|round(1) }}%{% else %}0%{% endif %}"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Administradores -->
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <div class="h-4 w-4 bg-orange-500 rounded mr-3"></div>
+                <span class="text-gray-700">Administradores</span>
+            </div>
+            <div class="flex items-center">
+                <span class="text-gray-900 font-medium mr-2">{{ stats.admins }}</span>
+                <div class="w-24 bg-gray-200 rounded-full h-2">
+                    <div class="bg-orange-500 h-2 rounded-full" 
+                         style="width: {% if stats.total_users > 0 %}{{ (stats.admins / stats.total_users * 100)|round(1) }}%{% else %}0%{% endif %}"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Usuários Comuns -->
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <div class="h-4 w-4 bg-blue-500 rounded mr-3"></div>
+                <span class="text-gray-700">Usuários Comuns</span>
+            </div>
+            <div class="flex items-center">
+                <span class="text-gray-900 font-medium mr-2">{{ stats.regular_users }}</span>
+                <div class="w-24 bg-gray-200 rounded-full h-2">
+                    <div class="bg-blue-500 h-2 rounded-full" 
+                         style="width: {% if stats.total_users > 0 %}{{ (stats.regular_users / stats.total_users * 100)|round(1) }}%{% else %}0%{% endif %}"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

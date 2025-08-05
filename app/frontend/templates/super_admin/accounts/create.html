@@ -1,0 +1,180 @@
+{% extends "super_admin/base.html" %}
+
+{% block page_title %}Criar Account{% endblock %}
+
+{% block breadcrumb %}
+<nav class="flex" aria-label="Breadcrumb">
+    <ol class="inline-flex items-center space-x-1 md:space-x-3">
+        <li class="inline-flex items-center">
+            <a href="{{ url_for('super_admin.accounts.index') }}" class="text-gray-700 hover:text-green-600">
+                Accounts
+            </a>
+        </li>
+        <li>
+            <div class="flex items-center">
+                <i class='bx bx-chevron-right text-gray-400'></i>
+                <span class="ml-1 text-gray-500">Criar</span>
+            </div>
+        </li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block header_actions %}
+<a href="{{ url_for('super_admin.accounts.index') }}" 
+   class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors">
+    <i class='bx bx-arrow-back mr-2'></i>
+    Voltar
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl">
+    <!-- Formulário -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="mb-6">
+            <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                <i class='bx bx-building-house text-green-600 mr-2'></i>
+                Criar Novo Account
+            </h3>
+            <p class="text-sm text-gray-600 mt-1">Configure um novo account para um cliente ou organização</p>
+        </div>
+
+        <form method="POST" class="space-y-6">
+            <!-- Nome do Account -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Nome do Account <span class="text-red-500">*</span>
+                </label>
+                <input type="text" 
+                       name="name" 
+                       required
+                       placeholder="Ex: Hotel Paradise, Empresa ABC..."
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                <p class="text-xs text-gray-500 mt-1">Nome que identificará o account no sistema</p>
+            </div>
+
+            <!-- Subdomínio -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Subdomínio (Opcional)
+                </label>
+                <div class="flex">
+                    <input type="text" 
+                           name="subdomain" 
+                           placeholder="paradise"
+                           pattern="[a-z0-9-]+"
+                           class="flex-1 px-3 py-2 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                    <span class="px-3 py-2 bg-gray-100 border border-l-0 border-gray-300 rounded-r-lg text-gray-600">
+                        .ceotur.com
+                    </span>
+                </div>
+                <p class="text-xs text-gray-500 mt-1">
+                    Apenas letras minúsculas, números e hífens. Ex: "paradise" → paradise.ceotur.com
+                </p>
+            </div>
+
+            <!-- Owner do Account -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Email do Administrador <span class="text-red-500">*</span>
+                </label>
+                <input type="email" 
+                       name="owner_email" 
+                       required
+                       placeholder="admin@exemplo.com"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                <p class="text-xs text-gray-500 mt-1">
+                    Email de um usuário existente que será o administrador deste account
+                </p>
+            </div>
+
+            <!-- Lista de Usuários Disponíveis -->
+            {% if users %}
+            <div class="bg-gray-50 rounded-lg p-4">
+                <h4 class="font-medium text-gray-900 mb-3">Usuários Disponíveis para Owner:</h4>
+                <div class="max-h-40 overflow-y-auto space-y-2">
+                    {% for user in users %}
+                    <div class="flex items-center justify-between py-2 px-3 bg-white rounded border">
+                        <div>
+                            <p class="font-medium text-gray-900">{{ user.get_full_name() }}</p>
+                            <p class="text-sm text-gray-500">{{ user.email }}</p>
+                        </div>
+                        <div class="flex items-center">
+                            {% if user.role.value == 'administrador' %}
+                                <span class="px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded-full">
+                                    Administrador
+                                </span>
+                            {% else %}
+                                <span class="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
+                                    Usuário
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Descrição -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Descrição (Opcional)
+                </label>
+                <textarea name="description" 
+                          rows="3" 
+                          placeholder="Informações adicionais sobre o account..."
+                          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"></textarea>
+            </div>
+
+            <!-- Configurações Iniciais -->
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h4 class="font-medium text-blue-900 mb-3 flex items-center">
+                    <i class='bx bx-cog mr-2'></i>
+                    Configurações Iniciais
+                </h4>
+                <div class="space-y-3">
+                    <label class="flex items-center">
+                        <input type="checkbox" name="activate_immediately" checked
+                               class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded">
+                        <span class="ml-2 text-sm text-blue-800">Ativar account imediatamente</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="checkbox" name="send_welcome_email"
+                               class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded">
+                        <span class="ml-2 text-sm text-blue-800">Enviar email de boas-vindas ao administrador</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Botões -->
+            <div class="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
+                <a href="{{ url_for('super_admin.accounts.index') }}" 
+                   class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+                    Cancelar
+                </a>
+                <button type="submit" 
+                        class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex items-center">
+                    <i class='bx bx-save mr-2'></i>
+                    Criar Account
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Informações Importantes -->
+    <div class="bg-green-50 border border-green-200 rounded-lg p-4 mt-6">
+        <h4 class="font-medium text-green-900 mb-2 flex items-center">
+            <i class='bx bx-info-circle mr-2'></i>
+            O que acontece ao criar um account?
+        </h4>
+        <ul class="text-sm text-green-800 space-y-1">
+            <li>• O usuário especificado será promovido a Administrador</li>
+            <li>• Ele poderá gerenciar usuários dentro do account</li>
+            <li>• O subdomínio (se especificado) será único no sistema</li>
+            <li>• Todas as configurações poderão ser editadas posteriormente</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - CeoTur</title>
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+</head>
+<body class="bg-gray-50">
+    <!-- Navbar -->
+    <nav class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <div class="flex items-center">
+                        <i class='bx bxs-hotel text-blue-600 text-2xl mr-2'></i>
+                        <h1 class="text-xl font-bold text-gray-900">CeoTur</h1>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center text-sm text-gray-600">
+                        <i class='bx bx-user-circle text-lg mr-1'></i>
+                        <span class="font-medium">{{ user.get_full_name() }}</span>
+                        <span class="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                            {{ user.role.value }}
+                        </span>
+                    </div>
+                    <a href="{{ url_for('auth.logout') }}" 
+                       class="flex items-center text-gray-600 hover:text-red-600 transition-colors">
+                        <i class='bx bx-log-out text-lg mr-1'></i>
+                        <span>Sair</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Content -->
+    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        <!-- Welcome Card -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <div class="flex items-center">
+                <div class="h-12 w-12 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-lg flex items-center justify-center mr-4">
+                    <i class='bx bx-home text-white text-2xl'></i>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900">
+                        Bem-vindo, {{ user.get_full_name() }}!
+                    </h2>
+                    <p class="text-gray-600">
+                        Sistema SaaS funcionando perfeitamente
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center">
+                    <div class="h-8 w-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                        <i class='bx bx-check-circle text-green-600'></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">Status</p>
+                        <p class="text-lg font-semibold text-gray-900">Ativo</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center">
+                    <div class="h-8 w-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                        <i class='bx bx-user text-blue-600'></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">Perfil</p>
+                        <p class="text-lg font-semibold text-gray-900">{{ user.role.value.title() }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center">
+                    <div class="h-8 w-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                        <i class='bx bx-calendar text-purple-600'></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">Último Login</p>
+                        <p class="text-lg font-semibold text-gray-900">
+                            {% if user.last_login %}
+                                {{ user.last_login.strftime('%d/%m %H:%M') }}
+                            {% else %}
+                                Primeiro acesso
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Ações Rápidas</h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <button class="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                    <i class='bx bx-plus-circle text-2xl text-blue-600 mb-2'></i>
+                    <span class="text-sm text-gray-700">Criar</span>
+                </button>
+                
+                <button class="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                    <i class='bx bx-list-ul text-2xl text-green-600 mb-2'></i>
+                    <span class="text-sm text-gray-700">Listar</span>
+                </button>
+                
+                <button class="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                    <i class='bx bx-cog text-2xl text-orange-600 mb-2'></i>
+                    <span class="text-sm text-gray-700">Configurar</span>
+                </button>
+                
+                <button class="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                    <i class='bx bx-bar-chart text-2xl text-purple-600 mb-2'></i>
+                    <span class="text-sm text-gray-700">Relatórios</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,238 @@
+{% extends "super_admin/base.html" %}
+
+{% block page_title %}Editar Account{% endblock %}
+
+{% block breadcrumb %}
+<nav class="flex" aria-label="Breadcrumb">
+    <ol class="inline-flex items-center space-x-1 md:space-x-3">
+        <li class="inline-flex items-center">
+            <a href="{{ url_for('super_admin.accounts.index') }}" class="text-gray-700 hover:text-green-600">
+                Accounts
+            </a>
+        </li>
+        <li>
+            <div class="flex items-center">
+                <i class='bx bx-chevron-right text-gray-400'></i>
+                <span class="ml-1 text-gray-500">{{ account.name }}</span>
+            </div>
+        </li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block header_actions %}
+<div class="flex space-x-2">
+    <a href="{{ url_for('super_admin.accounts.view', account_id=account.id) }}" 
+       class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors">
+        <i class='bx bx-show mr-2'></i>
+        Ver
+    </a>
+    <a href="{{ url_for('super_admin.accounts.index') }}" 
+       class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors">
+        <i class='bx bx-arrow-back mr-2'></i>
+        Voltar
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl">
+    <!-- Info do Account -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div class="flex items-center">
+            <div class="h-16 w-16 bg-green-100 rounded-full flex items-center justify-center mr-4">
+                <i class='bx bx-buildings text-green-600 text-2xl'></i>
+            </div>
+            <div>
+                <h3 class="text-xl font-semibold text-gray-900">{{ account.name }}</h3>
+                {% if account.subdomain %}
+                    <p class="text-gray-600">{{ account.subdomain }}.ceotur.com</p>
+                {% else %}
+                    <p class="text-gray-400">Sem subdomínio</p>
+                {% endif %}
+                <div class="flex items-center mt-1">
+                    {% if account.status.value == 'active' %}
+                        <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                            <i class='bx bx-check-circle mr-1'></i>Ativo
+                        </span>
+                    {% elif account.status.value == 'suspended' %}
+                        <span class="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">
+                            <i class='bx bx-pause-circle mr-1'></i>Suspenso
+                        </span>
+                    {% else %}
+                        <span class="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full">
+                            <i class='bx bx-x-circle mr-1'></i>Inativo
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulário de Edição -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="mb-6">
+            <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                <i class='bx bx-edit text-green-600 mr-2'></i>
+                Editar Informações
+            </h3>
+            <p class="text-sm text-gray-600 mt-1">Modifique as configurações do account</p>
+        </div>
+
+        <form method="POST" class="space-y-6">
+            <!-- Nome do Account -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Nome do Account <span class="text-red-500">*</span>
+                </label>
+                <input type="text" 
+                       name="name" 
+                       value="{{ account.name }}"
+                       required
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+            </div>
+
+            <!-- Subdomínio -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Subdomínio (Opcional)
+                </label>
+                <div class="flex">
+                    <input type="text" 
+                           name="subdomain" 
+                           value="{{ account.subdomain or '' }}"
+                           pattern="[a-z0-9-]+"
+                           class="flex-1 px-3 py-2 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                    <span class="px-3 py-2 bg-gray-100 border border-l-0 border-gray-300 rounded-r-lg text-gray-600">
+                        .ceotur.com
+                    </span>
+                </div>
+                <p class="text-xs text-gray-500 mt-1">
+                    Apenas letras minúsculas, números e hífens
+                </p>
+            </div>
+
+            <!-- Status -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Status <span class="text-red-500">*</span>
+                </label>
+                <select name="status" 
+                        required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                    <option value="active" {% if account.status.value == 'active' %}selected{% endif %}>
+                        Ativo - Account funcionando normalmente
+                    </option>
+                    <option value="suspended" {% if account.status.value == 'suspended' %}selected{% endif %}>
+                        Suspenso - Acesso temporariamente bloqueado
+                    </option>
+                    <option value="inactive" {% if account.status.value == 'inactive' %}selected{% endif %}>
+                        Inativo - Account desativado
+                    </option>
+                </select>
+                <div class="mt-2 text-xs text-gray-500">
+                    <div class="space-y-1">
+                        <p><strong>Ativo:</strong> Usuários podem acessar normalmente</p>
+                        <p><strong>Suspenso:</strong> Login bloqueado temporariamente</p>
+                        <p><strong>Inativo:</strong> Account completamente desativado</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Informações do Owner -->
+            <div class="bg-gray-50 rounded-lg p-4">
+                <h4 class="font-medium text-gray-900 mb-3">Administrador Atual</h4>
+                {% if account.owner %}
+                    <div class="flex items-center">
+                        <div class="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                            <i class='bx bx-user text-blue-600'></i>
+                        </div>
+                        <div>
+                            <p class="font-medium text-gray-900">{{ account.owner.get_full_name() }}</p>
+                            <p class="text-sm text-gray-500">{{ account.owner.email }}</p>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2">
+                        Para alterar o administrador, edite o usuário diretamente na seção de usuários
+                    </p>
+                {% else %}
+                    <p class="text-gray-400">Nenhum administrador definido</p>
+                {% endif %}
+            </div>
+
+            <!-- Estatísticas -->
+            <div class="bg-gray-50 rounded-lg p-4">
+                <h4 class="font-medium text-gray-900 mb-3">Estatísticas do Account</h4>
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <span class="text-gray-600">Total de usuários:</span>
+                        <span class="text-gray-900 font-medium">{{ account.get_user_count() }}</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-600">Criado em:</span>
+                        <span class="text-gray-900">
+                            {% if account.created_at %}
+                                {{ account.created_at.strftime('%d/%m/%Y') }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div>
+                        <span class="text-gray-600">Criado por:</span>
+                        <span class="text-gray-900">
+                            {% if account.creator %}
+                                {{ account.creator.get_full_name() }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div>
+                        <span class="text-gray-600">Última atualização:</span>
+                        <span class="text-gray-900">
+                            {% if account.updated_at %}
+                                {{ account.updated_at.strftime('%d/%m/%Y') }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botões -->
+            <div class="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
+                <a href="{{ url_for('super_admin.accounts.index') }}" 
+                   class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+                    Cancelar
+                </a>
+                <button type="submit" 
+                        class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex items-center">
+                    <i class='bx bx-save mr-2'></i>
+                    Salvar Alterações
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Zona de Perigo -->
+    <div class="bg-red-50 border border-red-200 rounded-lg p-4 mt-6">
+        <h4 class="font-medium text-red-900 mb-2 flex items-center">
+            <i class='bx bx-error-circle mr-2'></i>
+            Zona de Perigo
+        </h4>
+        <p class="text-sm text-red-700 mb-3">
+            Deletar este account irá remover todos os usuários associados e é uma ação irreversível.
+        </p>
+        <form method="POST" action="{{ url_for('super_admin.accounts.delete', account_id=account.id) }}" 
+              class="inline" onsubmit="return confirm('ATENÇÃO: Tem certeza que deseja deletar o account {{ account.name }}? Todos os usuários serão desvinculados. Esta ação é irreversível!')">
+            <button type="submit" 
+                    class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors flex items-center">
+                <i class='bx bx-trash mr-2'></i>
+                Deletar Account
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

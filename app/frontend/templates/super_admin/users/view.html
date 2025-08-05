@@ -1,0 +1,263 @@
+{% extends "super_admin/base.html" %}
+
+{% block page_title %}{{ user.get_full_name() }}{% endblock %}
+
+{% block breadcrumb %}
+<nav class="flex" aria-label="Breadcrumb">
+    <ol class="inline-flex items-center space-x-1 md:space-x-3">
+        <li class="inline-flex items-center">
+            <a href="{{ url_for('super_admin.users.index') }}" class="text-gray-700 hover:text-blue-600">
+                Usuários
+            </a>
+        </li>
+        <li>
+            <div class="flex items-center">
+                <i class='bx bx-chevron-right text-gray-400'></i>
+                <span class="ml-1 text-gray-500">{{ user.get_full_name() }}</span>
+            </div>
+        </li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block header_actions %}
+<div class="flex space-x-2">
+    <a href="{{ url_for('super_admin.users.edit', user_id=user.id) }}" 
+       class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors">
+        <i class='bx bx-edit mr-2'></i>
+        Editar
+    </a>
+    <a href="{{ url_for('super_admin.users.index') }}" 
+       class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors">
+        <i class='bx bx-arrow-back mr-2'></i>
+        Voltar
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl">
+    <!-- Header do Usuário -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div class="flex items-center">
+            <div class="h-20 w-20 bg-blue-100 rounded-full flex items-center justify-center mr-6">
+                <i class='bx bx-user text-blue-600 text-3xl'></i>
+            </div>
+            <div class="flex-1">
+                <h2 class="text-2xl font-bold text-gray-900">{{ user.get_full_name() }}</h2>
+                <p class="text-gray-600 text-lg">{{ user.email }}</p>
+                <div class="flex items-center mt-2">
+                    {% if user.role.value == 'super_admin' %}
+                        <span class="px-3 py-1 bg-purple-100 text-purple-800 text-sm rounded-full">
+                            <i class='bx bx-shield-check mr-1'></i>Super Admin
+                        </span>
+                    {% elif user.role.value == 'administrador' %}
+                        <span class="px-3 py-1 bg-orange-100 text-orange-800 text-sm rounded-full">
+                            <i class='bx bx-crown mr-1'></i>Administrador
+                        </span>
+                    {% else %}
+                        <span class="px-3 py-1 bg-gray-100 text-gray-800 text-sm rounded-full">
+                            <i class='bx bx-user mr-1'></i>Usuário
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="text-right">
+                <div class="text-sm text-gray-500">ID do Usuário</div>
+                <div class="text-lg font-mono text-gray-900">#{{ user.id }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Informações Principais -->
+        <div class="lg:col-span-2">
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <i class='bx bx-info-circle text-blue-600 mr-2'></i>
+                    Informações Principais
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500 mb-1">Primeiro Nome</label>
+                        <p class="text-gray-900">{{ user.first_name }}</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500 mb-1">Último Nome</label>
+                        <p class="text-gray-900">{{ user.last_name }}</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500 mb-1">Email</label>
+                        <p class="text-gray-900">{{ user.email }}</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500 mb-1">Tipo de Usuário</label>
+                        <p class="text-gray-900">{{ user.role.value.replace('_', ' ').title() }}</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500 mb-1">Account Associado</label>
+                        {% if user.account %}
+                            <p class="text-blue-600 hover:text-blue-700">
+                                <a href="{{ url_for('super_admin.accounts.view', account_id=user.account.id) }}">
+                                    {{ user.account.name }}
+                                </a>
+                            </p>
+                        {% else %}
+                            <p class="text-gray-400">Nenhum account associado</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Atividade Recente -->
+            <div class="bg-white rounded-lg shadow-md p-6 mt-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <i class='bx bx-time text-green-600 mr-2'></i>
+                    Atividade
+                </h3>
+                
+                <div class="space-y-4">
+                    <div class="flex items-center py-3 border-b border-gray-100">
+                        <div class="h-8 w-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                            <i class='bx bx-calendar text-green-600 text-sm'></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-900">Conta criada</p>
+                            <p class="text-xs text-gray-500">
+                                {% if user.created_at %}
+                                    {{ user.created_at.strftime('%d de %B de %Y às %H:%M') }}
+                                {% else %}
+                                    Data não disponível
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center py-3 border-b border-gray-100">
+                        <div class="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                            <i class='bx bx-log-in text-blue-600 text-sm'></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-900">Último login</p>
+                            <p class="text-xs text-gray-500">
+                                {% if user.last_login %}
+                                    {{ user.last_login.strftime('%d de %B de %Y às %H:%M') }}
+                                {% else %}
+                                    Nunca fez login
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center py-3">
+                        <div class="h-8 w-8 bg-orange-100 rounded-full flex items-center justify-center mr-3">
+                            <i class='bx bx-edit text-orange-600 text-sm'></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-900">Última atualização</p>
+                            <p class="text-xs text-gray-500">
+                                {% if user.updated_at %}
+                                    {{ user.updated_at.strftime('%d de %B de %Y às %H:%M') }}
+                                {% else %}
+                                    Nunca atualizado
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Painel Lateral -->
+        <div class="space-y-6">
+            <!-- Ações Rápidas -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h4 class="font-semibold text-gray-900 mb-4">Ações Rápidas</h4>
+                <div class="space-y-3">
+                    <a href="{{ url_for('super_admin.users.edit', user_id=user.id) }}" 
+                       class="block w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors text-center">
+                        <i class='bx bx-edit mr-2'></i>
+                        Editar Usuário
+                    </a>
+                    
+                    {% if user.account %}
+                        <a href="{{ url_for('super_admin.accounts.view', account_id=user.account.id) }}" 
+                           class="block w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg transition-colors text-center">
+                            <i class='bx bx-buildings mr-2'></i>
+                            Ver Account
+                        </a>
+                    {% endif %}
+                    
+                    {% if user.id != current_user.id %}
+                        <form method="POST" action="{{ url_for('super_admin.users.delete', user_id=user.id) }}" 
+                              onsubmit="return confirm('Tem certeza que deseja deletar este usuário?')">
+                            <button type="submit" 
+                                    class="block w-full bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg transition-colors text-center">
+                                <i class='bx bx-trash mr-2'></i>
+                                Deletar Usuário
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Estatísticas -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h4 class="font-semibold text-gray-900 mb-4">Estatísticas</h4>
+                <div class="space-y-3">
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Tempo no sistema:</span>
+                        <span class="font-medium text-gray-900">
+                            {% if user.created_at %}
+                                {% set days = (moment().date() - user.created_at.date()).days %}
+                                {% if days == 0 %}
+                                    Hoje
+                                {% elif days == 1 %}
+                                    1 dia
+                                {% else %}
+                                    {{ days }} dias
+                                {% endif %}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </span>
+                    </div>
+                    
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Status:</span>
+                        <span class="font-medium text-green-600">Ativo</span>
+                    </div>
+                    
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Permissões:</span>
+                        <span class="font-medium text-gray-900">
+                            {% if user.role.value == 'super_admin' %}
+                                Completas
+                            {% elif user.role.value == 'administrador' %}
+                                Account Admin
+                            {% else %}
+                                Limitadas
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info Sistema -->
+            <div class="bg-gray-50 rounded-lg p-4">
+                <h4 class="font-medium text-gray-900 mb-3">Informações do Sistema</h4>
+                <div class="text-xs text-gray-600 space-y-1">
+                    <p><strong>ID:</strong> {{ user.id }}</p>
+                    <p><strong>Criado:</strong> {{ user.created_at.strftime('%d/%m/%Y') if user.created_at else '—' }}</p>
+                    <p><strong>Atualizado:</strong> {{ user.updated_at.strftime('%d/%m/%Y') if user.updated_at else '—' }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
