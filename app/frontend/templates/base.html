@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Sistema{% endblock %}</title>
-    <link href="{{ url_for('static', filename='css/output.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
     <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}" type="image/x-icon">
     <link rel='stylesheet' href='https://unpkg.com/boxicons@latest/css/boxicons.min.css'>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -17,49 +17,221 @@
     }
 </style>
 
-<body class="max-h-screen bg-white dark:bg-zinc-900">
-    <div class="flex flex-row h-screen">
+<body class="h-screen bg-white dark:bg-zinc-900 overflow-hidden">
+    <div class="flex h-screen">
         <!-- Sidebar -->
         <div id="sidebar"
-            class="flex flex-col max-h-screen fixed inset-y-0 left-0 bg-white dark:bg-zinc-900 w-64 p-4 transform -translate-x-full transition-transform duration-300 ease-in-out md:relative md:translate-x-0 z-50 border-r border-gray-200 dark:border-zinc-700">
+            class="flex flex-col h-screen fixed inset-y-0 left-0 bg-white dark:bg-zinc-900 w-52 p-4 transform -translate-x-full transition-transform duration-300 ease-in-out md:relative md:translate-x-0 z-50 border-r border-gray-200 dark:border-zinc-700">
             
             <!-- Logo -->
-            <div class="flex justify-center mb-8">
-                <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="Logo" class="h-12">
+            <div class="flex justify-center mb-8 flex-shrink-0">
+                <!-- Logo para modo claro (oculta no dark) -->
+                <img src="{{ url_for('static', filename='images/logo-light.svg') }}" alt="Logo" class="h-12 block dark:hidden">
+                <!-- Logo para modo escuro (oculta no light) -->
+                <img src="{{ url_for('static', filename='images/logo-dark.svg') }}" alt="Logo" class="h-12 hidden dark:block">
             </div>
 
             <!-- Navigation -->
             <div class="flex flex-col justify-between h-full text-black dark:text-white">
                 <!-- Menu Principal -->
-                <div class="flex flex-col space-y-2">
-                    <a href="{{ url_for('dashboard') }}"
+                <div class="flex flex-col space-y-2 flex-shrink-0">
+                    <a href="{{ url_for('main.dashboard') }}"
                         class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors
-                        {% if request.endpoint == 'dashboard' %}bg-gray-100 dark:bg-zinc-800 border-r-4 border-blue-500{% endif %}">
+                        {% if request.endpoint == 'main.dashboard' %}bg-gray-100 dark:bg-zinc-800{% endif %}">
                         <i class='bx bx-home-alt text-xl'></i>
                         <span class="font-medium">Dashboard</span>
                     </a>
                 </div>
 
+                <!-- Seletor de Account -->
+                <div class="mt-auto mb-4">
+                    {% if current_user.is_super_admin() %}
+                        <!-- Super Admin - Pode escolher qualquer account -->
+                        {% set all_accounts = current_user.get_accessible_accounts() %}
+                        {% set current_working_account = current_user.get_current_working_account() %}
+                        
+                        {% if all_accounts|length > 0 %}
+                            <!-- Dropdown para escolher account -->
+                            <div class="relative">
+                                <button id="accountDropdown" 
+                                        class="w-full px-3 py-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-700 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center">
+                                            <i class='bx bx-shield-check text-purple-600 dark:text-purple-400 text-sm mr-2'></i>
+                                            <div class="text-left">
+                                                <p class="text-xs font-medium text-purple-800 dark:text-purple-300" id="currentAccountName">
+                                                    {% if current_working_account %}
+                                                        {{ current_working_account.name }}
+                                                    {% else %}
+                                                        Super Admin Global
+                                                    {% endif %}
+                                                </p>
+                                                <p class="text-xs text-purple-600 dark:text-purple-400">
+                                                    {% if current_working_account %}
+                                                        Gerenciando conta
+                                                    {% else %}
+                                                        {{ all_accounts|length }} contas disponíveis
+                                                    {% endif %}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <i class='bx bx-chevron-down text-purple-600 dark:text-purple-400 text-sm'></i>
+                                    </div>
+                                </button>
+                                
+                                <!-- Dropdown Menu -->
+                                <div id="accountDropdownMenu" 
+                                     class="hidden absolute bottom-full left-0 right-0 mb-2 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
+                                    
+                                    <!-- Opção: Modo Super Admin Global -->
+                                    <button onclick="switchAccount(null, 'Super Admin Global')"
+                                            class="w-full px-3 py-2 text-left hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors rounded-t-lg {% if not current_working_account %}bg-purple-50 dark:bg-purple-900/20{% endif %}">
+                                        <div class="flex items-center">
+                                            <i class='bx bx-shield-check text-purple-600 dark:text-purple-400 text-sm mr-2'></i>
+                                            <div>
+                                                <p class="text-xs font-medium text-gray-900 dark:text-white">Super Admin Global</p>
+                                                <p class="text-xs text-gray-500 dark:text-gray-400">
+                                                    {% if not current_working_account %}
+                                                        <i class='bx bx-check mr-1'></i>Modo atual
+                                                    {% else %}
+                                                        Gerenciar sistema
+                                                    {% endif %}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </button>
+                                    
+                                    <!-- Divider -->
+                                    <div class="border-t border-gray-200 dark:border-zinc-700"></div>
+                                    
+                                    <!-- Accounts disponíveis -->
+                                    {% for account in all_accounts %}
+                                    <button onclick="switchAccount({{ account.id }}, '{{ account.name }}')"
+                                            class="w-full px-3 py-2 text-left hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors {% if loop.last %}rounded-b-lg{% endif %} {% if current_working_account and account.id == current_working_account.id %}bg-blue-50 dark:bg-blue-900/20{% endif %}">
+                                        <div class="flex items-center">
+                                            <i class='bx bx-buildings text-blue-600 dark:text-blue-400 text-sm mr-2'></i>
+                                            <div>
+                                                <p class="text-xs font-medium text-gray-900 dark:text-white">{{ account.name }}</p>
+                                                <p class="text-xs text-gray-500 dark:text-gray-400">
+                                                    {% if current_working_account and account.id == current_working_account.id %}
+                                                        <i class='bx bx-check mr-1'></i>Gerenciando agora
+                                                    {% else %}
+                                                        {{ account.get_user_count() }} usuários
+                                                    {% endif %}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </button>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% else %}
+                            <!-- Nenhuma account no sistema -->
+                            <div class="px-3 py-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-700">
+                                <div class="flex items-center">
+                                    <i class='bx bx-shield-check text-purple-600 dark:text-purple-400 text-sm mr-2'></i>
+                                    <div>
+                                        <p class="text-xs font-medium text-purple-800 dark:text-purple-300">Super Admin</p>
+                                        <p class="text-xs text-purple-600 dark:text-purple-400">Nenhuma conta criada</p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <!-- Usuários normais - só veem suas próprias accounts -->
+                        {% set user_accounts = current_user.get_accessible_accounts() %}
+                        {% if user_accounts|length > 1 %}
+                            <!-- Múltiplas accounts - Dropdown -->
+                            <div class="relative">
+                                <button id="accountDropdown" 
+                                        class="w-full px-3 py-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center">
+                                            <i class='bx bx-buildings text-blue-600 dark:text-blue-400 text-sm mr-2'></i>
+                                            <div class="text-left">
+                                                <p class="text-xs font-medium text-blue-800 dark:text-blue-300" id="currentAccountName">
+                                                    {{ current_user.account.name if current_user.account else 'Selecionar Account' }}
+                                                </p>
+                                                <p class="text-xs text-blue-600 dark:text-blue-400">{{ user_accounts|length }} accounts</p>
+                                            </div>
+                                        </div>
+                                        <i class='bx bx-chevron-down text-blue-600 dark:text-blue-400 text-sm'></i>
+                                    </div>
+                                </button>
+                                
+                                <!-- Dropdown Menu -->
+                                <div id="accountDropdownMenu" 
+                                     class="hidden absolute bottom-full left-0 right-0 mb-2 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg shadow-lg z-50">
+                                    {% for account in user_accounts %}
+                                    <button onclick="switchAccount({{ account.id }}, '{{ account.name }}')"
+                                            class="w-full px-3 py-2 text-left hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors first:rounded-t-lg last:rounded-b-lg">
+                                        <div class="flex items-center">
+                                            <i class='bx bx-buildings text-blue-600 dark:text-blue-400 text-sm mr-2'></i>
+                                            <div>
+                                                <p class="text-xs font-medium text-gray-900 dark:text-white">{{ account.name }}</p>
+                                                <p class="text-xs text-gray-500 dark:text-gray-400">
+                                                    {% if account.id == current_user.account_id %}
+                                                        <i class='bx bx-check mr-1'></i>Atual
+                                                    {% else %}
+                                                        {{ account.get_user_count() }} usuários
+                                                    {% endif %}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </button>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% elif user_accounts|length == 1 %}
+                            <!-- Uma account - Display fixo -->
+                            <div class="px-3 py-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
+                                <div class="flex items-center">
+                                    <i class='bx bx-buildings text-blue-600 dark:text-blue-400 text-sm mr-2'></i>
+                                    <div>
+                                        <p class="text-xs font-medium text-blue-800 dark:text-blue-300">{{ user_accounts[0].name }}</p>
+                                        <p class="text-xs text-blue-600 dark:text-blue-400">Minha conta</p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% else %}
+                            <!-- Sem accounts -->
+                            <div class="px-3 py-2 bg-gray-50 dark:bg-zinc-700 rounded-lg border border-gray-200 dark:border-zinc-600">
+                                <div class="flex items-center">
+                                    <i class='bx bx-user text-gray-500 dark:text-gray-400 text-sm mr-2'></i>
+                                    <div>
+                                        <p class="text-xs font-medium text-gray-700 dark:text-gray-300">Usuário Individual</p>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">Sem account</p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+
                 <!-- Botões de Ação Embaixo -->
-                <div class="mt-auto pt-4 border-t border-gray-200 dark:border-zinc-700">
-                    <div class="flex flex-col space-y-2">
+                <div class="pt-4 border-t border-gray-200 dark:border-zinc-700 flex-shrink-0">
+                    <div class="flex flex-row justify-between px-2">
                         <!-- Configurações -->
-                        <button class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors text-left w-full">
+                        <button class="flex items-center p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors">
                             <i class='bx bx-cog text-xl'></i>
-                            <span class="font-medium">Configurações</span>
                         </button>
 
+                        <!-- Super Admin - Só aparece para super admins -->
+                        {% if current_user.is_super_admin() %}
+                        <a href="{{ url_for('super_admin.dashboard') }}" class="flex items-center p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors">
+                            <i class='bx bx-shield-quarter text-xl'></i>
+                        </a>
+                        {% endif %}
+
                         <!-- Dark Mode Toggle -->
-                        <button id="dark-mode" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors text-left w-full">
+                        <button id="dark-mode" class="flex items-center p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors">
                             <i id="icon-dark" class='bx bx-sun text-xl'></i>
-                            <span class="font-medium">Tema</span>
                         </button>
 
                         <!-- Logout -->
-                        <form action="{{ url_for('auth.logout') }}" method="POST" class="w-full">
-                            <button type="submit" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors text-left w-full text-red-600 dark:text-red-400">
+                        <form action="{{ url_for('auth.logout') }}" method="POST" class="inline">
+                            <button type="submit" class="flex items-center p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors text-red-600 dark:text-red-400">
                                 <i class='bx bx-log-out text-xl'></i>
-                                <span class="font-medium">Sair</span>
                             </button>
                         </form>
                     </div>
@@ -71,23 +243,25 @@
         <div id="overlay" class="fixed inset-0 bg-black opacity-50 hidden z-40 md:hidden"></div>
 
         <!-- Main Content -->
-        <div class="bg-white dark:bg-zinc-900 flex-1 md:p-4 md:pl-0 max-h-screen flex flex-col">
+        <div class="flex-1 flex flex-col h-screen bg-white dark:bg-zinc-900">
             <!-- Mobile Header -->
-            <div class="bg-white dark:bg-zinc-900 h-12 p-4 flex items-center md:hidden border-b border-gray-200 dark:border-zinc-700">
+            <div class="bg-white dark:bg-zinc-900 h-12 p-4 flex items-center md:hidden border-b border-gray-200 dark:border-zinc-700 flex-shrink-0">
                 <button id="openSidebar" class="text-black dark:text-white">
                     <i class="bx bx-menu bx-sm"></i>
                 </button>
-                <h1 class="ml-4 text-lg font-semibold">{% block page_title %}Sistema{% endblock %}</h1>
+                <h1 class="ml-4 text-lg font-semibold text-black dark:text-white">{% block page_title %}Sistema{% endblock %}</h1>
             </div>
 
-            <!-- Content Area -->
-            <div class="bg-gray-50 dark:bg-zinc-800 text-black dark:text-white flex flex-col h-full p-6 rounded-lg">
-                {% block content %}
-                <div class="text-center py-12">
-                    <h2 class="text-2xl font-bold mb-4">Bem-vindo!</h2>
-                    <p class="text-gray-600 dark:text-gray-400">Selecione uma opção no menu lateral para começar.</p>
+            <!-- Content Area - AQUI É ONDE FICA O SCROLL -->
+            <div class="flex-1 bg-gray-50 dark:bg-zinc-800 m-4 rounded-lg overflow-hidden">
+                <div class="h-full overflow-y-auto p-6 text-black dark:text-white">
+                    {% block content %}
+                    <div class="text-center py-12">
+                        <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Bem-vindo!</h2>
+                        <p class="text-gray-600 dark:text-gray-400">Selecione uma opção no menu lateral para começar.</p>
+                    </div>
+                    {% endblock %}
                 </div>
-                {% endblock %}
             </div>
         </div>
     </div>
@@ -118,8 +292,7 @@
             await fetch('/api/user/theme', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': document.querySelector('meta[name=csrf-token]')?.content || ''
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ theme: theme })
             });
@@ -204,6 +377,59 @@
             }
         });
     });
+
+    // Account Dropdown
+    const accountDropdown = document.getElementById('accountDropdown');
+    const accountDropdownMenu = document.getElementById('accountDropdownMenu');
+
+    if (accountDropdown && accountDropdownMenu) {
+        accountDropdown.addEventListener('click', (e) => {
+            e.preventDefault();
+            accountDropdownMenu.classList.toggle('hidden');
+        });
+
+        // Fechar dropdown clicando fora
+        document.addEventListener('click', (e) => {
+            if (!accountDropdown.contains(e.target) && !accountDropdownMenu.contains(e.target)) {
+                accountDropdownMenu.classList.add('hidden');
+            }
+        });
+    }
+
+    // Função para trocar de account
+    window.switchAccount = async function(accountId, accountName) {
+        try {
+            const response = await fetch('/user/switch-account', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ account_id: accountId })
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                // Atualizar o nome exibido
+                if (document.getElementById('currentAccountName')) {
+                    document.getElementById('currentAccountName').textContent = accountName;
+                }
+                
+                // Fechar dropdown
+                if (accountDropdownMenu) {
+                    accountDropdownMenu.classList.add('hidden');
+                }
+                
+                // Recarregar página para aplicar mudanças (dados do dashboard mudam)
+                window.location.reload();
+            } else {
+                alert('Erro ao trocar account: ' + data.error);
+            }
+        } catch (error) {
+            alert('Erro ao trocar account');
+            console.error(error);
+        }
+    };
 </script>
 
 </html>

@@ -1,130 +1,117 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - CeoTur</title>
-    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
-    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-</head>
-<body class="bg-gray-50">
-    <!-- Navbar -->
-    <nav class="bg-white shadow-sm border-b">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex items-center">
-                    <div class="flex items-center">
-                        <i class='bx bxs-hotel text-blue-600 text-2xl mr-2'></i>
-                        <h1 class="text-xl font-bold text-gray-900">CeoTur</h1>
+{% extends "base.html" %}
+
+{% block title %}Página Inicial{% endblock %}
+
+{% block page_title %}Início{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Cabeçalho de Boas-vindas -->
+    <div class="text-center py-8">
+        <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+            Bem-vindo ao Sistema! 🚀
+        </h1>
+        <p class="text-xl text-gray-600 dark:text-gray-400 mb-8">
+            Olá, {{ current_user.get_full_name() }}! Escolha uma opção abaixo para começar.
+        </p>
+    </div>
+
+    <!-- Cards de Acesso Rápido -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Card Dashboard -->
+        <a href="{{ url_for('main.dashboard') }}" class="group">
+            <div class="bg-white dark:bg-zinc-700 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-600 hover:shadow-md transition-all duration-200 group-hover:scale-105">
+                <div class="text-center">
+                    <div class="p-3 bg-blue-100 dark:bg-blue-900 rounded-full w-12 h-12 mx-auto mb-4 flex items-center justify-center">
+                        <i class='bx bx-home-alt text-blue-600 dark:text-blue-400 text-xl'></i>
                     </div>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <div class="flex items-center text-sm text-gray-600">
-                        <i class='bx bx-user-circle text-lg mr-1'></i>
-                        <span class="font-medium">{{ user.get_full_name() }}</span>
-                        <span class="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                            {{ user.role.value }}
-                        </span>
-                    </div>
-                    <a href="{{ url_for('auth.logout') }}" 
-                       class="flex items-center text-gray-600 hover:text-red-600 transition-colors">
-                        <i class='bx bx-log-out text-lg mr-1'></i>
-                        <span>Sair</span>
-                    </a>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Dashboard</h3>
+                    <p class="text-gray-600 dark:text-gray-300 text-sm">
+                        Visualize estatísticas e informações gerais
+                    </p>
                 </div>
             </div>
-        </div>
-    </nav>
+        </a>
 
-    <!-- Content -->
-    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        <!-- Welcome Card -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-            <div class="flex items-center">
-                <div class="h-12 w-12 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-lg flex items-center justify-center mr-4">
-                    <i class='bx bx-home text-white text-2xl'></i>
-                </div>
-                <div>
-                    <h2 class="text-2xl font-bold text-gray-900">
-                        Bem-vindo, {{ user.get_full_name() }}!
-                    </h2>
-                    <p class="text-gray-600">
-                        Sistema SaaS funcionando perfeitamente
+        <!-- Card Configurações -->
+        <div class="group cursor-pointer">
+            <div class="bg-white dark:bg-zinc-700 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-600 hover:shadow-md transition-all duration-200 group-hover:scale-105">
+                <div class="text-center">
+                    <div class="p-3 bg-green-100 dark:bg-green-900 rounded-full w-12 h-12 mx-auto mb-4 flex items-center justify-center">
+                        <i class='bx bx-cog text-green-600 dark:text-green-400 text-xl'></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Configurações</h3>
+                    <p class="text-gray-600 dark:text-gray-300 text-sm">
+                        Ajuste suas preferências do sistema
                     </p>
                 </div>
             </div>
         </div>
 
-        <!-- Stats Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <div class="flex items-center">
-                    <div class="h-8 w-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
-                        <i class='bx bx-check-circle text-green-600'></i>
+        <!-- Card Super Admin (só aparece para super admin) -->
+        {% if current_user.is_super_admin() %}
+        <a href="{{ url_for('super_admin.dashboard') }}" class="group">
+            <div class="bg-white dark:bg-zinc-700 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-600 hover:shadow-md transition-all duration-200 group-hover:scale-105">
+                <div class="text-center">
+                    <div class="p-3 bg-purple-100 dark:bg-purple-900 rounded-full w-12 h-12 mx-auto mb-4 flex items-center justify-center">
+                        <i class='bx bx-shield-quarter text-purple-600 dark:text-purple-400 text-xl'></i>
                     </div>
-                    <div>
-                        <p class="text-sm text-gray-600">Status</p>
-                        <p class="text-lg font-semibold text-gray-900">Ativo</p>
-                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Super Admin</h3>
+                    <p class="text-gray-600 dark:text-gray-300 text-sm">
+                        Gerenciar usuários e configurações avançadas
+                    </p>
                 </div>
             </div>
+        </a>
+        {% endif %}
+    </div>
 
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <div class="flex items-center">
-                    <div class="h-8 w-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-                        <i class='bx bx-user text-blue-600'></i>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-600">Perfil</p>
-                        <p class="text-lg font-semibold text-gray-900">{{ user.role.value.title() }}</p>
-                    </div>
-                </div>
+    <!-- Informações do Usuário -->
+    <div class="bg-white dark:bg-zinc-700 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-600">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 text-center">
+            Suas Informações
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="text-center">
+                <p class="text-sm text-gray-600 dark:text-gray-400">Nome Completo</p>
+                <p class="text-base font-medium text-gray-900 dark:text-white">{{ current_user.get_full_name() }}</p>
             </div>
-
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <div class="flex items-center">
-                    <div class="h-8 w-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
-                        <i class='bx bx-calendar text-purple-600'></i>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-600">Último Login</p>
-                        <p class="text-lg font-semibold text-gray-900">
-                            {% if user.last_login %}
-                                {{ user.last_login.strftime('%d/%m %H:%M') }}
-                            {% else %}
-                                Primeiro acesso
-                            {% endif %}
-                        </p>
-                    </div>
-                </div>
+            <div class="text-center">
+                <p class="text-sm text-gray-600 dark:text-gray-400">Email</p>
+                <p class="text-base font-medium text-gray-900 dark:text-white">{{ current_user.email }}</p>
             </div>
         </div>
-
-        <!-- Actions -->
-        <div class="bg-white rounded-lg shadow-md p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Ações Rápidas</h3>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <button class="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                    <i class='bx bx-plus-circle text-2xl text-blue-600 mb-2'></i>
-                    <span class="text-sm text-gray-700">Criar</span>
-                </button>
-                
-                <button class="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                    <i class='bx bx-list-ul text-2xl text-green-600 mb-2'></i>
-                    <span class="text-sm text-gray-700">Listar</span>
-                </button>
-                
-                <button class="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                    <i class='bx bx-cog text-2xl text-orange-600 mb-2'></i>
-                    <span class="text-sm text-gray-700">Configurar</span>
-                </button>
-                
-                <button class="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                    <i class='bx bx-bar-chart text-2xl text-purple-600 mb-2'></i>
-                    <span class="text-sm text-gray-700">Relatórios</span>
-                </button>
-            </div>
+        <div class="text-center mt-4">
+            <p class="text-sm text-gray-600 dark:text-gray-400">Função</p>
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
+                {{ current_user.role.value.replace('_', ' ').title() }}
+            </span>
         </div>
     </div>
-</body>
-</html>
+
+    <!-- Teste do Dark Mode -->
+    <div class="text-center">
+        <p class="text-gray-600 dark:text-gray-300 mb-2">
+            💡 Teste o modo escuro clicando no ícone ☀️/🌙 na sidebar!
+        </p>
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+            Sua preferência será salva automaticamente.
+        </p>
+    </div>
+
+    <!-- Conteúdo adicional para testar scroll -->
+    <div class="bg-white dark:bg-zinc-700 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-600">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Teste de Scroll</h3>
+        <div class="space-y-4">
+            {% for i in range(10) %}
+            <div class="p-4 bg-gray-50 dark:bg-zinc-600 rounded-lg">
+                <h4 class="font-medium text-gray-900 dark:text-white">Item {{ i + 1 }}</h4>
+                <p class="text-gray-600 dark:text-gray-300 text-sm">
+                    Este é um item de exemplo para testar o scroll. O layout deve manter a sidebar fixa enquanto este conteúdo rola.
+                </p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

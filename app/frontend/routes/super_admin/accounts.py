@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import current_user
 from models import db, Account, User, UserRole, AccountStatus
 from . import super_admin_required
@@ -30,7 +30,7 @@ def index():
         except ValueError:
             pass
     
-    # Paginação
+    # Paginação SEM joinedload (não funciona com lazy='dynamic')
     accounts = query.order_by(Account.created_at.desc()).paginate(
         page=page, per_page=20, error_out=False
     )
@@ -102,8 +102,13 @@ def create():
 def view(account_id):
     """Ver detalhes do account"""
     account = Account.query.get_or_404(account_id)
-    users = account.get_active_users().all()
-    return render_template('super_admin/accounts/view.html', account=account, users=users)
+    
+    # Buscar todos os usuários do account
+    users = account.users.all()  # ou users = User.query.filter_by(account_id=account_id).all()
+    
+    return render_template('super_admin/accounts/view.html', 
+                         account=account, 
+                         users=users)
 
 @accounts_bp.route('/<int:account_id>/edit', methods=['GET', 'POST'])
 @super_admin_required
@@ -168,3 +173,193 @@ def delete(account_id):
         flash(f'Erro ao deletar: {str(e)}', 'error')
     
     return redirect(url_for('super_admin.accounts.index'))
+
+
+
+# Adicione essas rotas no arquivo accounts.py
+
+@accounts_bp.route('/<int:account_id>/users')
+@super_admin_required
+def manage_users(account_id):
+    """Gerenciar usuários do account"""
+    account = Account.query.get_or_404(account_id)
+    users = account.users.all()
+    
+    # Usuários disponíveis para adicionar
+    # INCLUINDO super admins para que possam se conectar a qualquer account
+    available_users = User.query.filter(
+        (User.account_id == None) | (User.account_id != account_id)
+        # Removemos o filtro User.role != UserRole.SUPER_ADMIN
+    ).all()
+    
+    return render_template('super_admin/accounts/manage_users.html', 
+                         account=account, 
+                         users=users, 
+                         available_users=available_users)
+
+@accounts_bp.route('/<int:account_id>/users/add', methods=['POST'])
+@super_admin_required
+def add_user(account_id):
+    """Adicionar usuário ao account"""
+    account = Account.query.get_or_404(account_id)
+    
+    try:
+        user_id = request.form.get('user_id', type=int)
+        role = request.form.get('role', 'user')
+        
+        if not user_id:
+            flash('Usuário é obrigatório!', 'error')
+            return redirect(url_for('super_admin.accounts.manage_users', account_id=account_id))
+        
+        user = User.query.get_or_404(user_id)
+        
+        # SUPER ADMIN pode se conectar a qualquer account
+        if user.is_super_admin():
+            # Super admin pode ter múltiplas conexões, não verificar conflitos
+            pass
+        else:
+            # Para usuários normais, verificar se já não está em outro account
+            if user.account_id and user.account_id != account_id:
+                flash(f'Usuário {user.get_full_name()} já pertence a outro account!', 'error')
+                return redirect(url_for('super_admin.accounts.manage_users', account_id=account_id))
+        
+        # Para super admin, NÃO alterar o account_id principal
+        if not user.is_super_admin():
+            user.account_id = account_id
+        
+        # Definir role (mas super admin mantém seu role)
+        if not user.is_super_admin():
+            if role == 'administrador':
+                user.role = UserRole.ADMINISTRADOR
+            else:
+                user.role = UserRole.USER
+        
+        # Para super admin, criar uma associação adicional se necessário
+        if user.is_super_admin():
+            # Criar um registro de acesso especial ou apenas permitir via session
+            # Por enquanto, vamos só permitir que ele apareça na lista
+            flash(f'Super Admin {user.get_full_name()} agora pode acessar este account!', 'success')
+        else:
+            flash(f'Usuário {user.get_full_name()} adicionado ao account!', 'success')
+        
+        db.session.commit()
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Erro ao adicionar usuário: {str(e)}', 'error')
+    
+    return redirect(url_for('super_admin.accounts.manage_users', account_id=account_id))
+
+@accounts_bp.route('/<int:account_id>/users/remove', methods=['POST'])
+@super_admin_required
+def remove_user(account_id):
+    """Remover usuário do account"""
+    account = Account.query.get_or_404(account_id)
+    
+    try:
+        data = request.get_json()
+        user_id = data.get('user_id', type=int)
+        
+        if not user_id:
+            return jsonify({'success': False, 'error': 'ID do usuário é obrigatório'})
+        
+        user = User.query.get_or_404(user_id)
+        
+        # Não permitir remover o owner
+        if user.id == account.owner_id:
+            return jsonify({'success': False, 'error': 'Não é possível remover o administrador do account'})
+        
+        # Remover usuário do account
+        user.account_id = None
+        user.role = UserRole.USER  # Voltar para usuário comum
+        
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': f'Usuário {user.get_full_name()} removido do account'})
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)})
+
+@accounts_bp.route('/<int:account_id>/transfer-ownership', methods=['POST'])
+@super_admin_required
+def transfer_ownership(account_id):
+    """Transferir ownership do account"""
+    account = Account.query.get_or_404(account_id)
+    
+    try:
+        new_owner_id = request.form.get('new_owner_id', type=int)
+        
+        if not new_owner_id:
+            flash('Novo administrador é obrigatório!', 'error')
+            return redirect(url_for('super_admin.accounts.manage_users', account_id=account_id))
+        
+        new_owner = User.query.get_or_404(new_owner_id)
+        
+        # Verificar se o usuário pertence ao account
+        if new_owner.account_id != account_id:
+            flash('O novo administrador deve pertencer ao account!', 'error')
+            return redirect(url_for('super_admin.accounts.manage_users', account_id=account_id))
+        
+        # Demover o owner atual (se existir)
+        if account.owner:
+            old_owner = account.owner
+            old_owner.role = UserRole.USER
+        
+        # Promover o novo owner
+        new_owner.role = UserRole.ADMINISTRADOR
+        account.owner_id = new_owner_id
+        
+        db.session.commit()
+        
+        flash(f'Administração transferida para {new_owner.get_full_name()}!', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Erro ao transferir administração: {str(e)}', 'error')
+    
+    return redirect(url_for('super_admin.accounts.manage_users', account_id=account_id))
+
+@accounts_bp.route('/<int:account_id>/users/<int:user_id>/promote', methods=['POST'])
+@super_admin_required
+def promote_user(account_id, user_id):
+    """Promover usuário a administrador"""
+    account = Account.query.get_or_404(account_id)
+    user = User.query.get_or_404(user_id)
+    
+    try:
+        # Verificar se usuário pertence ao account
+        if user.account_id != account_id:
+            return jsonify({'success': False, 'error': 'Usuário não pertence a este account'})
+        
+        # Promover usuário
+        user.role = UserRole.ADMINISTRADOR
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': f'{user.get_full_name()} promovido a administrador'})
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)})
+
+@accounts_bp.route('/<int:account_id>/users/<int:user_id>/demote', methods=['POST'])
+@super_admin_required
+def demote_user(account_id, user_id):
+    """Rebaixar administrador a usuário comum"""
+    account = Account.query.get_or_404(account_id)
+    user = User.query.get_or_404(user_id)
+    
+    try:
+        # Não permitir rebaixar o owner
+        if user.id == account.owner_id:
+            return jsonify({'success': False, 'error': 'Não é possível rebaixar o owner do account'})
+        
+        # Rebaixar usuário
+        user.role = UserRole.USER
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': f'{user.get_full_name()} rebaixado a usuário comum'})
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)})

@@ -1,0 +1,316 @@
+{% extends "super_admin/base.html" %}
+
+{% block page_title %}{{ account.name }} - Usuários{% endblock %}
+
+{% block breadcrumb %}
+<nav class="flex" aria-label="Breadcrumb">
+    <ol class="inline-flex items-center space-x-1 md:space-x-3">
+        <li class="inline-flex items-center">
+            <a href="{{ url_for('super_admin.accounts.index') }}" class="text-gray-700 hover:text-blue-600">
+                Accounts
+            </a>
+        </li>
+        <li>
+            <div class="flex items-center">
+                <i class='bx bx-chevron-right text-gray-400'></i>
+                <a href="{{ url_for('super_admin.accounts.view', account_id=account.id) }}" class="ml-1 text-gray-700 hover:text-blue-600">
+                    {{ account.name }}
+                </a>
+            </div>
+        </li>
+        <li>
+            <div class="flex items-center">
+                <i class='bx bx-chevron-right text-gray-400'></i>
+                <span class="ml-1 text-gray-500">Usuários</span>
+            </div>
+        </li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block header_actions %}
+<div class="flex space-x-2">
+    <button onclick="openModal('addUserModal')" 
+            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors">
+        <i class='bx bx-user-plus mr-2'></i>
+        Adicionar Usuário
+    </button>
+    <a href="{{ url_for('super_admin.accounts.view', account_id=account.id) }}" 
+       class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors">
+        <i class='bx bx-arrow-back mr-2'></i>
+        Voltar
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Info do Account -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-900">{{ account.name }}</h2>
+                <p class="text-gray-600">{{ account.get_user_count() }} usuários ativos</p>
+            </div>
+            <div class="text-right">
+                {% if account.status.value == 'active' %}
+                    <span class="px-3 py-1 bg-green-100 text-green-800 text-sm rounded-full">Ativo</span>
+                {% elif account.status.value == 'suspended' %}
+                    <span class="px-3 py-1 bg-yellow-100 text-yellow-800 text-sm rounded-full">Suspenso</span>
+                {% else %}
+                    <span class="px-3 py-1 bg-red-100 text-red-800 text-sm rounded-full">Inativo</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Administrador do Account -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <i class='bx bx-crown text-orange-500 mr-2'></i>
+            Administrador
+        </h3>
+        
+        {% if account.owner %}
+            <div class="flex items-center justify-between p-4 bg-orange-50 rounded-lg border border-orange-200">
+                <div class="flex items-center">
+                    <div class="h-12 w-12 bg-orange-100 rounded-full flex items-center justify-center mr-4">
+                        <i class='bx bx-crown text-orange-600 text-xl'></i>
+                    </div>
+                    <div>
+                        <p class="font-medium text-gray-900">{{ account.owner.get_full_name() }}</p>
+                        <p class="text-sm text-gray-600">{{ account.owner.email }}</p>
+                        <p class="text-xs text-gray-500">Administrador desde {{ account.created_at.strftime('%d/%m/%Y') }}</p>
+                    </div>
+                </div>
+                <button onclick="openTransferModal()" 
+                        class="text-orange-600 hover:text-orange-700 text-sm">
+                    <i class='bx bx-transfer mr-1'></i>
+                    Transferir
+                </button>
+            </div>
+        {% else %}
+            <div class="text-center py-8 text-gray-400">
+                <i class='bx bx-user-x text-4xl mb-2'></i>
+                <p>Nenhum administrador definido</p>
+                <button onclick="openTransferModal()" 
+                        class="mt-2 text-blue-600 hover:text-blue-700 text-sm">
+                    Definir Administrador
+                </button>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Lista de Usuários -->
+    <div class="bg-white rounded-lg shadow-md">
+        <div class="p-6 border-b border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                <i class='bx bx-group text-blue-600 mr-2'></i>
+                Usuários ({{ users|length }})
+            </h3>
+        </div>
+        
+        {% if users %}
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Usuário
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Role
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Adicionado em
+                            </th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Ações
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for user in users %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                                        <i class='bx bx-user text-blue-600'></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-medium text-gray-900">{{ user.get_full_name() }}</p>
+                                        <p class="text-sm text-gray-600">{{ user.email }}</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {% if user.role.value == 'administrador' %}
+                                    <span class="px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded-full">
+                                        <i class='bx bx-crown mr-1'></i>Administrador
+                                    </span>
+                                {% else %}
+                                    <span class="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
+                                        Usuário
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ user.created_at.strftime('%d/%m/%Y') if user.created_at else '—' }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <div class="flex items-center justify-end space-x-2">
+                                    <a href="{{ url_for('super_admin.users.view', user_id=user.id) }}" 
+                                       class="text-blue-600 hover:text-blue-900" title="Ver usuário">
+                                        <i class='bx bx-show text-lg'></i>
+                                    </a>
+                                    {% if user.id != account.owner_id %}
+                                        <button onclick="removeUser({{ user.id }}, '{{ user.get_full_name() }}')" 
+                                                class="text-red-600 hover:text-red-900" title="Remover do account">
+                                            <i class='bx bx-user-minus text-lg'></i>
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-12 text-gray-400">
+                <i class='bx bx-group text-4xl mb-2'></i>
+                <p>Nenhum usuário encontrado</p>
+                <button onclick="openModal('addUserModal')" 
+                        class="mt-2 text-blue-600 hover:text-blue-700 text-sm">
+                    Adicionar primeiro usuário
+                </button>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal: Adicionar Usuário -->
+<div id="addUserModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Adicionar Usuário ao Account</h3>
+            
+            <form method="POST" action="{{ url_for('super_admin.accounts.add_user', account_id=account.id) }}">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Selecionar Usuário</label>
+                    <select name="user_id" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Escolha um usuário...</option>
+                        {% for user in available_users %}
+                            <option value="{{ user.id }}">{{ user.get_full_name() }} ({{ user.email }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Role</label>
+                    <select name="role" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="user">Usuário</option>
+                        <option value="administrador">Administrador</option>
+                    </select>
+                </div>
+                
+                <div class="flex justify-end space-x-2">
+                    <button type="button" onclick="closeModal('addUserModal')" 
+                            class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400">
+                        Cancelar
+                    </button>
+                    <button type="submit" 
+                            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                        Adicionar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Transferir Ownership -->
+<div id="transferModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Transferir Administração</h3>
+            
+            <form method="POST" action="{{ url_for('super_admin.accounts.transfer_ownership', account_id=account.id) }}">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Novo Administrador</label>
+                    <select name="new_owner_id" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Escolha um usuário...</option>
+                        {% for user in users %}
+                            {% if user.id != account.owner_id %}
+                                <option value="{{ user.id }}">{{ user.get_full_name() }} ({{ user.email }})</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                    <p class="text-sm text-yellow-800">
+                        <i class='bx bx-warning mr-1'></i>
+                        O usuário atual perderá privilégios de administrador.
+                    </p>
+                </div>
+                
+                <div class="flex justify-end space-x-2">
+                    <button type="button" onclick="closeModal('transferModal')" 
+                            class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400">
+                        Cancelar
+                    </button>
+                    <button type="submit" 
+                            class="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700">
+                        Transferir
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function openModal(modalId) {
+    document.getElementById(modalId).classList.remove('hidden');
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.add('hidden');
+}
+
+function openTransferModal() {
+    openModal('transferModal');
+}
+
+function removeUser(userId, userName) {
+    if (confirm(`Tem certeza que deseja remover ${userName} deste account?`)) {
+        fetch(`{{ url_for('super_admin.accounts.remove_user', account_id=account.id) }}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ user_id: userId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Erro ao remover usuário: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Erro ao remover usuário');
+        });
+    }
+}
+
+// Fechar modal clicando fora
+window.onclick = function(event) {
+    if (event.target.classList.contains('bg-opacity-50')) {
+        event.target.classList.add('hidden');
+    }
+}
+</script>
+{% endblock %}
