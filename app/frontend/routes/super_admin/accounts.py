@@ -30,7 +30,7 @@ def index():
         except ValueError:
             pass
     
-    # Paginação SEM joinedload (não funciona com lazy='dynamic')
+    # Paginação
     accounts = query.order_by(Account.created_at.desc()).paginate(
         page=page, per_page=20, error_out=False
     )
@@ -60,7 +60,7 @@ def create():
                 flash(f'Subdomínio {subdomain} já está em uso!', 'error')
                 return render_template('super_admin/accounts/create.html')
         
-        # Buscar ou criar owner
+        # Buscar owner
         owner = User.query.filter_by(email=owner_email).first()
         if not owner:
             flash(f'Usuário com email {owner_email} não encontrado!', 'error')
@@ -77,11 +77,14 @@ def create():
             db.session.add(account)
             db.session.commit()
             
-            # Atualizar role do owner para administrador
+            # Adicionar owner ao account usando relacionamento many-to-many
+            owner.add_to_account(account, 'admin')
+            
+            # Atualizar role do owner para administrador (se não for super admin)
             if owner.role == UserRole.USER:
                 owner.role = UserRole.ADMINISTRADOR
-                owner.account_id = account.id
-                db.session.commit()
+            
+            db.session.commit()
             
             flash(f'Account {account.name} criado com sucesso!', 'success')
             return redirect(url_for('super_admin.accounts.index'))
@@ -104,7 +107,7 @@ def view(account_id):
     account = Account.query.get_or_404(account_id)
     
     # Buscar todos os usuários do account
-    users = account.users.all()  # ou users = User.query.filter_by(account_id=account_id).all()
+    users = account.users.all()
     
     return render_template('super_admin/accounts/view.html', 
                          account=account, 
@@ -157,11 +160,13 @@ def delete(account_id):
     try:
         account_name = account.name
         
-        # Remover associação dos usuários
+        # Remover associação dos usuários usando relacionamento many-to-many
         users = account.users.all()
         for user in users:
-            user.account_id = None
-            if user.role == UserRole.ADMINISTRADOR:
+            user.remove_from_account(account)
+            # Se user era admin deste account apenas, rebaixar para user
+            remaining_accounts = user.get_accounts()
+            if user.role == UserRole.ADMINISTRADOR and len(remaining_accounts) == 0:
                 user.role = UserRole.USER
         
         db.session.delete(account)
@@ -174,10 +179,6 @@ def delete(account_id):
     
     return redirect(url_for('super_admin.accounts.index'))
 
-
-
-# Adicione essas rotas no arquivo accounts.py
-
 @accounts_bp.route('/<int:account_id>/users')
 @super_admin_required
 def manage_users(account_id):
@@ -185,11 +186,9 @@ def manage_users(account_id):
     account = Account.query.get_or_404(account_id)
     users = account.users.all()
     
-    # Usuários disponíveis para adicionar
-    # INCLUINDO super admins para que possam se conectar a qualquer account
+    # Usuários disponíveis para adicionar (que NÃO estão neste account)
     available_users = User.query.filter(
-        (User.account_id == None) | (User.account_id != account_id)
-        # Removemos o filtro User.role != UserRole.SUPER_ADMIN
+        ~User.accounts.any(Account.id == account_id)
     ).all()
     
     return render_template('super_admin/accounts/manage_users.html', 
@@ -213,36 +212,23 @@ def add_user(account_id):
         
         user = User.query.get_or_404(user_id)
         
-        # SUPER ADMIN pode se conectar a qualquer account
-        if user.is_super_admin():
-            # Super admin pode ter múltiplas conexões, não verificar conflitos
-            pass
-        else:
-            # Para usuários normais, verificar se já não está em outro account
-            if user.account_id and user.account_id != account_id:
-                flash(f'Usuário {user.get_full_name()} já pertence a outro account!', 'error')
-                return redirect(url_for('super_admin.accounts.manage_users', account_id=account_id))
+        # Verificar se usuário já está no account
+        if user in account.users:
+            flash(f'Usuário {user.get_full_name()} já está neste account!', 'error')
+            return redirect(url_for('super_admin.accounts.manage_users', account_id=account_id))
         
-        # Para super admin, NÃO alterar o account_id principal
-        if not user.is_super_admin():
-            user.account_id = account_id
+        # Adicionar usuário ao account
+        user.add_to_account(account, role)
         
-        # Definir role (mas super admin mantém seu role)
+        # Atualizar role global se necessário (não alterar super admin)
         if not user.is_super_admin():
-            if role == 'administrador':
+            if role == 'admin':
                 user.role = UserRole.ADMINISTRADOR
-            else:
-                user.role = UserRole.USER
-        
-        # Para super admin, criar uma associação adicional se necessário
-        if user.is_super_admin():
-            # Criar um registro de acesso especial ou apenas permitir via session
-            # Por enquanto, vamos só permitir que ele apareça na lista
-            flash(f'Super Admin {user.get_full_name()} agora pode acessar este account!', 'success')
-        else:
-            flash(f'Usuário {user.get_full_name()} adicionado ao account!', 'success')
+            # Manter role atual se já é admin ou deixar como está
         
         db.session.commit()
+        
+        flash(f'Usuário {user.get_full_name()} adicionado ao account!', 'success')
         
     except Exception as e:
         db.session.rollback()
@@ -269,9 +255,13 @@ def remove_user(account_id):
         if user.id == account.owner_id:
             return jsonify({'success': False, 'error': 'Não é possível remover o administrador do account'})
         
-        # Remover usuário do account
-        user.account_id = None
-        user.role = UserRole.USER  # Voltar para usuário comum
+        # Remover usuário do account usando relacionamento many-to-many
+        user.remove_from_account(account)
+        
+        # Se não tem mais accounts e era admin, rebaixar para user
+        remaining_accounts = user.get_accounts()
+        if user.role == UserRole.ADMINISTRADOR and len(remaining_accounts) == 0:
+            user.role = UserRole.USER
         
         db.session.commit()
         
@@ -296,8 +286,8 @@ def transfer_ownership(account_id):
         
         new_owner = User.query.get_or_404(new_owner_id)
         
-        # Verificar se o usuário pertence ao account
-        if new_owner.account_id != account_id:
+        # Verificar se o usuário está no account
+        if new_owner not in account.users:
             flash('O novo administrador deve pertencer ao account!', 'error')
             return redirect(url_for('super_admin.accounts.manage_users', account_id=account_id))
         
@@ -329,11 +319,14 @@ def promote_user(account_id, user_id):
     
     try:
         # Verificar se usuário pertence ao account
-        if user.account_id != account_id:
+        if user not in account.users:
             return jsonify({'success': False, 'error': 'Usuário não pertence a este account'})
         
         # Promover usuário
         user.role = UserRole.ADMINISTRADOR
+        # Atualizar role na tabela de associação também
+        account.update_user_role(user, 'admin')
+        
         db.session.commit()
         
         return jsonify({'success': True, 'message': f'{user.get_full_name()} promovido a administrador'})
@@ -356,6 +349,9 @@ def demote_user(account_id, user_id):
         
         # Rebaixar usuário
         user.role = UserRole.USER
+        # Atualizar role na tabela de associação também
+        account.update_user_role(user, 'user')
+        
         db.session.commit()
         
         return jsonify({'success': True, 'message': f'{user.get_full_name()} rebaixado a usuário comum'})

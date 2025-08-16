@@ -29,7 +29,7 @@ class Account(db.Model):
     owner = db.relationship('User', foreign_keys=[owner_id], backref='owned_accounts')
     creator = db.relationship('User', foreign_keys=[created_by], backref='created_accounts')
     
-    # Many-to-Many com users já definido no User model via backref 'members'
+    # Many-to-Many com users já definido no User model via backref 'users'
     
     def __init__(self, name, owner_id, created_by, subdomain=None):
         self.name = name.strip()
@@ -43,11 +43,11 @@ class Account(db.Model):
     
     def get_user_count(self):
         """Retorna número de usuários na account"""
-        return self.members.count()
+        return self.users.count()
     
     def get_users(self):
         """Retorna todos os usuários da account"""
-        return self.members.all()
+        return self.users.all()
     
     def add_user(self, user, role_in_account='user'):
         """Adiciona usuário à account"""
@@ -59,31 +59,30 @@ class Account(db.Model):
     
     def get_admins(self):
         """Retorna usuários com role admin na account"""
-        admin_user_ids = db.session.execute(
-            db.select([user_accounts.c.user_id]).where(
-                (user_accounts.c.account_id == self.id) & 
-                (user_accounts.c.role_in_account == 'admin')
-            )
-        ).fetchall()
-        
-        if admin_user_ids:
-            from . import User
-            return User.query.filter(User.id.in_([uid[0] for uid in admin_user_ids])).all()
-        return []
+        try:
+            # Versão simplificada usando o relacionamento many-to-many
+            admin_users = []
+            for user in self.users.all():
+                role = user.get_role_in_account(self)
+                if role in ['admin', 'owner'] or user.id == self.owner_id or user.is_super_admin():
+                    admin_users.append(user)
+            return admin_users
+        except Exception as e:
+            print(f"Erro em get_admins: {e}")
+            return []
     
     def get_regular_users(self):
         """Retorna usuários com role user na account"""
-        user_user_ids = db.session.execute(
-            db.select([user_accounts.c.user_id]).where(
-                (user_accounts.c.account_id == self.id) & 
-                (user_accounts.c.role_in_account == 'user')
-            )
-        ).fetchall()
-        
-        if user_user_ids:
-            from . import User
-            return User.query.filter(User.id.in_([uid[0] for uid in user_user_ids])).all()
-        return []
+        try:
+            regular_users = []
+            for user in self.users.all():
+                role = user.get_role_in_account(self)
+                if role == 'user' and user.id != self.owner_id and not user.is_super_admin():
+                    regular_users.append(user)
+            return regular_users
+        except Exception as e:
+            print(f"Erro em get_regular_users: {e}")
+            return []
     
     def has_user(self, user):
         """Verifica se usuário está na account"""
@@ -96,13 +95,17 @@ class Account(db.Model):
     def update_user_role(self, user, new_role):
         """Atualiza o role do usuário na account"""
         if self.has_user(user):
-            db.session.execute(
-                user_accounts.update().where(
-                    (user_accounts.c.user_id == user.id) & 
-                    (user_accounts.c.account_id == self.id)
-                ).values(role_in_account=new_role)
-            )
-            return True
+            try:
+                # Usar text() para queries SQL diretas
+                from sqlalchemy import text
+                db.session.execute(
+                    text("UPDATE user_accounts SET role_in_account = :new_role WHERE user_id = :user_id AND account_id = :account_id"),
+                    {'new_role': new_role, 'user_id': user.id, 'account_id': self.id}
+                )
+                return True
+            except Exception as e:
+                print(f"Erro ao atualizar role: {e}")
+                return False
         return False
     
     # =============================================================================

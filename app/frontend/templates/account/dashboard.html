@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+
+{% block title %}{{ current_account.name }} - Dashboard{% endblock %}
+
+{% block page_title %}Dashboard - {{ current_account.name }}{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Header da Account -->
+    <div class="bg-white dark:bg-zinc-700 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-600">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                    Bem-vindo à {{ current_account.name }}! 🏢
+                </h1>
+                <p class="text-gray-600 dark:text-gray-300">
+                    Olá, {{ current_user_full_name }}! 
+                    {% if user_role == 'super_admin' %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+                            Super Admin
+                        </span>
+                    {% elif is_owner %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                            Owner
+                        </span>
+                    {% elif is_admin %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                            Admin
+                        </span>
+                    {% else %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                            Usuário
+                        </span>
+                    {% endif %}
+                </p>
+            </div>
+            <div class="text-right">
+                <p class="text-sm text-gray-500 dark:text-gray-400">Account ID</p>
+                <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ current_account.id }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estatísticas da Account -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Total de Usuários -->
+        <div class="bg-white dark:bg-zinc-700 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-600">
+            <div class="flex items-center">
+                <div class="p-3 bg-blue-100 dark:bg-blue-900 rounded-full">
+                    <i class='bx bx-users text-blue-600 dark:text-blue-400 text-2xl'></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Usuários</p>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ stats.total_users }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Administradores -->
+        <div class="bg-white dark:bg-zinc-700 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-600">
+            <div class="flex items-center">
+                <div class="p-3 bg-purple-100 dark:bg-purple-900 rounded-full">
+                    <i class='bx bx-shield text-purple-600 dark:text-purple-400 text-2xl'></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Administradores</p>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ stats.admin_users }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status da Account -->
+        <div class="bg-white dark:bg-zinc-700 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-600">
+            <div class="flex items-center">
+                <div class="p-3 {% if stats.account_status == 'active' %}bg-green-100 dark:bg-green-900{% else %}bg-red-100 dark:bg-red-900{% endif %} rounded-full">
+                    <i class='bx {% if stats.account_status == 'active' %}bx-check-circle text-green-600 dark:text-green-400{% else %}bx-x-circle text-red-600 dark:text-red-400{% endif %} text-2xl'></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Status</p>
+                    <p class="text-lg font-bold {% if stats.account_status == 'active' %}text-green-600 dark:text-green-400{% else %}text-red-600 dark:text-red-400{% endif %}">
+                        {{ stats.account_status|title }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data de Criação -->
+        <div class="bg-white dark:bg-zinc-700 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-600">
+            <div class="flex items-center">
+                <div class="p-3 bg-gray-100 dark:bg-gray-800 rounded-full">
+                    <i class='bx bx-calendar text-gray-600 dark:text-gray-400 text-2xl'></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Criada em</p>
+                    <p class="text-sm font-bold text-gray-900 dark:text-white">{{ stats.created_at|format_date }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cards de Acesso Rápido -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Card Usuários -->
+        {% if is_admin %}
+        <a href="{{ 'account.users'|account_url }}" class="group">
+            <div class="bg-white dark:bg-zinc-700 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-600 hover:shadow-md transition-all duration-200 group-hover:scale-105">
+                <div class="text-center">
+                    <div class="p-3 bg-blue-100 dark:bg-blue-900 rounded-full w-12 h-12 mx-auto mb-4 flex items-center justify-center">
+                        <i class='bx bx-users text-blue-600 dark:text-blue-400 text-xl'></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Usuários</h3>
+                    <p class="text-gray-600 dark:text-gray-300 text-sm">
+                        Gerencie usuários e permissões
+                    </p>
+                </div>
+            </div>
+        </a>
+        {% endif %}
+
+        <!-- Card Configurações -->
+        {% if is_admin %}
+        <a href="{{ 'account.settings'|account_url }}" class="group">
+            <div class="bg-white dark:bg-zinc-700 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-600 hover:shadow-md transition-all duration-200 group-hover:scale-105">
+                <div class="text-center">
+                    <div class="p-3 bg-green-100 dark:bg-green-900 rounded-full w-12 h-12 mx-auto mb-4 flex items-center justify-center">
+                        <i class='bx bx-cog text-green-600 dark:text-green-400 text-xl'></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Configurações</h3>
+                    <p class="text-gray-600 dark:text-gray-300 text-sm">
+                        Configure sua account
+                    </p>
+                </div>
+            </div>
+        </a>
+        {% endif %}
+
+        <!-- Card Relatórios -->
+        <a href="{{ 'account.reports'|account_url }}" class="group">
+            <div class="bg-white dark:bg-zinc-700 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-600 hover:shadow-md transition-all duration-200 group-hover:scale-105">
+                <div class="text-center">
+                    <div class="p-3 bg-purple-100 dark:bg-purple-900 rounded-full w-12 h-12 mx-auto mb-4 flex items-center justify-center">
+                        <i class='bx bx-bar-chart text-purple-600 dark:text-purple-400 text-xl'></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Relatórios</h3>
+                    <p class="text-gray-600 dark:text-gray-300 text-sm">
+                        Visualize dados e estatísticas
+                    </p>
+                </div>
+            </div>
+        </a>
+
+        <!-- Card Super Admin (só para super admin) -->
+        {% if is_super_admin %}
+        <a href="{{ url_for('super_admin.dashboard') }}" class="group">
+            <div class="bg-white dark:bg-zinc-700 p-6 rounded-xl shadow-sm border border-red-200 dark:border-red-600 hover:shadow-md transition-all duration-200 group-hover:scale-105">
+                <div class="text-center">
+                    <div class="p-3 bg-red-100 dark:bg-red-900 rounded-full w-12 h-12 mx-auto mb-4 flex items-center justify-center">
+                        <i class='bx bx-crown text-red-600 dark:text-red-400 text-xl'></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Super Admin</h3>
+                    <p class="text-gray-600 dark:text-gray-300 text-sm">
+                        Painel de administração global
+                    </p>
+                </div>
+            </div>
+        </a>
+        {% endif %}
+
+        <!-- Card Perfil -->
+        <a href="{{ url_for('main.profile') }}" class="group">
+            <div class="bg-white dark:bg-zinc-700 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-600 hover:shadow-md transition-all duration-200 group-hover:scale-105">
+                <div class="text-center">
+                    <div class="p-3 bg-yellow-100 dark:bg-yellow-900 rounded-full w-12 h-12 mx-auto mb-4 flex items-center justify-center">
+                        <i class='bx bx-user text-yellow-600 dark:text-yellow-400 text-xl'></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Meu Perfil</h3>
+                    <p class="text-gray-600 dark:text-gray-300 text-sm">
+                        Gerencie suas informações pessoais
+                    </p>
+                </div>
+            </div>
+        </a>
+
+        <!-- Card Ajuda -->
+        <a href="{{ url_for('main.help') }}" class="group">
+            <div class="bg-white dark:bg-zinc-700 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-600 hover:shadow-md transition-all duration-200 group-hover:scale-105">
+                <div class="text-center">
+                    <div class="p-3 bg-indigo-100 dark:bg-indigo-900 rounded-full w-12 h-12 mx-auto mb-4 flex items-center justify-center">
+                        <i class='bx bx-help-circle text-indigo-600 dark:text-indigo-400 text-xl'></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Ajuda</h3>
+                    <p class="text-gray-600 dark:text-gray-300 text-sm">
+                        Documentação e suporte
+                    </p>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Informações da Account -->
+    <div class="bg-white dark:bg-zinc-700 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-600">
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Informações da Account</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <h3 class="font-medium text-gray-900 dark:text-white mb-2">Detalhes</h3>
+                <dl class="space-y-1">
+                    <div class="flex justify-between">
+                        <dt class="text-sm text-gray-500 dark:text-gray-400">Nome:</dt>
+                        <dd class="text-sm text-gray-900 dark:text-white">{{ current_account.name }}</dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-sm text-gray-500 dark:text-gray-400">Subdomínio:</dt>
+                        <dd class="text-sm text-gray-900 dark:text-white">{{ current_account.subdomain or 'N/A' }}</dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-sm text-gray-500 dark:text-gray-400">Proprietário:</dt>
+                        <dd class="text-sm text-gray-900 dark:text-white">{{ stats.owner }}</dd>
+                    </div>
+                </dl>
+            </div>
+            <div>
+                <h3 class="font-medium text-gray-900 dark:text-white mb-2">Seu Acesso</h3>
+                <dl class="space-y-1">
+                    <div class="flex justify-between">
+                        <dt class="text-sm text-gray-500 dark:text-gray-400">Role na Account:</dt>
+                        <dd class="text-sm text-gray-900 dark:text-white">
+                            {% if user_role == 'super_admin' %}Super Admin{% elif is_owner %}Owner{% elif is_admin %}Admin{% else %}Usuário{% endif %}
+                        </dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-sm text-gray-500 dark:text-gray-400">Pode Administrar:</dt>
+                        <dd class="text-sm text-gray-900 dark:text-white">{{ 'Sim' if is_admin else 'Não' }}</dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-sm text-gray-500 dark:text-gray-400">Outras Accounts:</dt>
+                        <dd class="text-sm text-gray-900 dark:text-white">{{ user_account_count - 1 if user_account_count > 1 else 0 }}</dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
